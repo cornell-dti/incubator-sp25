@@ -24,9 +24,8 @@ const upload = multer({
 });
 
 router.post('/upload', upload.single('syllabus'), syllabusController.uploadSyllabus);
-router.get('/', syllabusController.getAllSyllabi);
-router.get('/:id', syllabusController.getSyllabusById);
-router.delete('/:id', syllabusController.deleteSyllabus);
-router.put('/:id', syllabusController.updateSyllabus);
+router.get('/:id', syllabusController.getSyllabiByUserId);
+router.delete('/:id', syllabusController.deleteSyllabusById);
+router.put('/:id', syllabusController.updateSyllabusById);
 
 export default router;

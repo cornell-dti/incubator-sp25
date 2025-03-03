@@ -1,4 +1,4 @@
-export interface Syllabus {
+export interface Course {
   id?: string;
   courseCode: string;
   fullCourseName: string;

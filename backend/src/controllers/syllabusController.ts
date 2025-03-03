@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { db, storage } from '../config/firebase';
-import { Syllabus } from '../models/syllabus';
+import { Course } from '../models/course';
+import { SyllabusRequestHandlers } from '../types/express';
 
-export const syllabusController = {
+export const syllabusController: SyllabusRequestHandlers = {
   uploadSyllabus: async (req: Request, res: Response) => {
     try {
       if (!req.file) {
@@ -47,14 +48,14 @@ export const syllabusController = {
 
       const fileUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
 
-      const syllabusData: Syllabus = {
+      const syllabusData: Course = {
         courseCode,
         fullCourseName,
         semester,
         fileUrl
       };
 
-      const docRef = await db.collection('syllabi').add(syllabusData);
+      const docRef = await db.collection('courses').add(syllabusData);
 
       return res.status(201).json({
         id: docRef.id,
@@ -67,19 +68,15 @@ export const syllabusController = {
     }
   },
 
-  getAllSyllabi: async (req: Request, res: Response) => {
+  getSyllabiByUserId: async (req: Request, res: Response) => {
     try {
-      const snapshot = await db.collection('syllabi').get();
+      const userDoc = await db.collection("users").doc(req.params.id).get();
 
-      const syllabi: any[] = [];
-      snapshot.forEach((doc) => {
-        syllabi.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
+      if (!userDoc.exists) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-      return res.status(200).json(syllabi);
+      return res.status(200).json(userDoc.courses);
 
     } catch (error) {
       console.error('Error fetching syllabi:', error);
@@ -87,41 +84,18 @@ export const syllabusController = {
     }
   },
 
-  getSyllabusById: async (req: Request, res: Response) => {
+  deleteSyllabusById: async (req: Request, res: Response) => {
     try {
       const syllabusId = req.params.id;
 
-      const doc = await db.collection('syllabi').doc(syllabusId).get();
-
-      if (!doc.exists) {
-        return res.status(404).json({ message: 'Syllabus not found' });
-      }
-
-      const syllabusData = doc.data() as Syllabus;
-
-      return res.status(200).json({
-        id: doc.id,
-        ...syllabusData
-      });
-
-    } catch (error) {
-      console.error('Error fetching syllabus:', error);
-      return res.status(500).json({ message: 'Failed to fetch syllabus', error });
-    }
-  },
-
-  deleteSyllabus: async (req: Request, res: Response) => {
-    try {
-      const syllabusId = req.params.id;
-
-      const docRef = db.collection('syllabi').doc(syllabusId);
+      const docRef = db.collection('courses').doc(syllabusId);
       const doc = await docRef.get();
 
       if (!doc.exists) {
         return res.status(404).json({ message: 'Syllabus not found' });
       }
 
-      const syllabusData = doc.data() as Syllabus;
+      const syllabusData = doc.data() as Course;
 
       if (syllabusData.fileUrl) {
         try {
@@ -144,21 +118,21 @@ export const syllabusController = {
     }
   },
 
-  updateSyllabus: async (req: Request, res: Response) => {
+  updateSyllabusById: async (req: Request, res: Response) => {
     try {
       const syllabusId = req.params.id;
       const { courseCode, fullCourseName, semester } = req.body;
 
-      const docRef = db.collection('syllabi').doc(syllabusId);
+      const docRef = db.collection('courses').doc(syllabusId);
       const doc = await docRef.get();
 
       if (!doc.exists) {
         return res.status(404).json({ message: 'Syllabus not found' });
       }
 
-      const syllabusData = doc.data() as Syllabus;
+      const syllabusData = doc.data() as Course;
 
-      const updateData: Partial<Syllabus> = {};
+      const updateData: Partial<Course> = {};
       if (courseCode) updateData.courseCode = courseCode;
       if (fullCourseName) updateData.fullCourseName = fullCourseName;
       if (semester) updateData.semester = semester;
