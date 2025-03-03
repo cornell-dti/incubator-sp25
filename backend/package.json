@@ -16,7 +16,9 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "firebase": "^11.4.0",
-    "firebase-admin": "^13.1.0"
+    "firebase-admin": "^13.1.0",
+    "firestore": "^1.1.6",
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
@@ -24,6 +26,7 @@
     "@types/node": "^22.13.5",
     "concurrently": "^9.1.2",
     "nodemon": "^3.1.9",
+    "prettier": "3.5.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }

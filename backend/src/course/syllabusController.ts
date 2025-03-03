@@ -1,19 +1,22 @@
-import { Request, Response } from 'express';
-import { db, storage } from '../config/firebase';
-import { Course } from './course.type';
-import { SyllabusRequestHandlers } from '../requestTypes';
+import { Request, Response } from "express";
+import { db, storage } from "../config/firebase";
+import { Course } from "./course.type";
+import { SyllabusRequestHandlers } from "../requestTypes";
 
 export const syllabusController: SyllabusRequestHandlers = {
   uploadSyllabus: async (req: Request, res: Response) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
+        return res.status(400).json({ message: "No file uploaded" });
       }
 
       const { courseCode, fullCourseName, semester } = req.body;
 
       if (!courseCode || !fullCourseName || !semester) {
-        return res.status(400).json({ message: 'Missing required fields: courseCode, fullCourseName, and semester are required' });
+        return res.status(400).json({
+          message:
+            "Missing required fields: courseCode, fullCourseName, and semester are required",
+        });
       }
 
       // create new file name for each syllabus upload for now
@@ -25,17 +28,22 @@ export const syllabusController: SyllabusRequestHandlers = {
         metadata: {
           contentType: req.file.mimetype,
         },
-        resumable: false
+        resumable: false,
       });
 
       const streamError = await new Promise<Error | null>((resolve) => {
-        stream.on('error', (err) => {
+        stream.on("error", (err) => {
           resolve(err);
         });
 
-        stream.on('finish', () => {
+        stream.on("finish", () => {
           resolve(null);
         });
+
+        if (!req.file?.buffer) {
+          res.status(400).json({ message: "No file uploaded" });
+          return;
+        }
 
         stream.end(req.file.buffer);
       });
@@ -52,19 +60,20 @@ export const syllabusController: SyllabusRequestHandlers = {
         courseCode,
         fullCourseName,
         semester,
-        fileUrl
+        fileUrl,
       };
 
-      const docRef = await db.collection('courses').add(syllabusData);
+      const docRef = await db.collection("courses").add(syllabusData);
 
       return res.status(201).json({
         id: docRef.id,
-        ...syllabusData
+        ...syllabusData,
       });
-
     } catch (error) {
-      console.error('Error uploading syllabus:', error);
-      return res.status(500).json({ message: 'Failed to upload syllabus', error });
+      console.error("Error uploading syllabus:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to upload syllabus", error });
     }
   },
 
@@ -73,14 +82,21 @@ export const syllabusController: SyllabusRequestHandlers = {
       const userDoc = await db.collection("users").doc(req.params.id).get();
 
       if (!userDoc.exists) {
-        return res.status(404).json({ error: "User not found" });
+        res.status(404).json({ error: "User not found" });
+        return;
       }
 
-      return res.status(200).json(userDoc.courses);
+      const userData = userDoc.data();
 
+      if (!userData || !userData.courses) {
+        res.status(404).json({ error: "No courses found for this user" });
+        return;
+      }
+
+      res.status(200).json(userData.courses);
     } catch (error) {
-      console.error('Error fetching syllabi:', error);
-      return res.status(500).json({ message: 'Failed to fetch syllabi', error });
+      console.error("Error fetching syllabi:", error);
+      res.status(500).json({ message: "Failed to fetch syllabi", error });
     }
   },
 
@@ -88,11 +104,11 @@ export const syllabusController: SyllabusRequestHandlers = {
     try {
       const syllabusId = req.params.id;
 
-      const docRef = db.collection('courses').doc(syllabusId);
+      const docRef = db.collection("courses").doc(syllabusId);
       const doc = await docRef.get();
 
       if (!doc.exists) {
-        return res.status(404).json({ message: 'Syllabus not found' });
+        return res.status(404).json({ message: "Syllabus not found" });
       }
 
       const syllabusData = doc.data() as Course;
@@ -100,21 +116,22 @@ export const syllabusController: SyllabusRequestHandlers = {
       if (syllabusData.fileUrl) {
         try {
           const fileUrl = new URL(syllabusData.fileUrl);
-          const filePath = fileUrl.pathname.split('/').slice(2).join('/');
+          const filePath = fileUrl.pathname.split("/").slice(2).join("/");
 
           await storage.bucket().file(filePath).delete();
         } catch (error) {
-          console.error('Error deleting file from storage:', error);
+          console.error("Error deleting file from storage:", error);
         }
       }
 
       await docRef.delete();
 
-      return res.status(200).json({ message: 'Syllabus deleted successfully' });
-
+      return res.status(200).json({ message: "Syllabus deleted successfully" });
     } catch (error) {
-      console.error('Error deleting syllabus:', error);
-      return res.status(500).json({ message: 'Failed to delete syllabus', error });
+      console.error("Error deleting syllabus:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to delete syllabus", error });
     }
   },
 
@@ -123,11 +140,11 @@ export const syllabusController: SyllabusRequestHandlers = {
       const syllabusId = req.params.id;
       const { courseCode, fullCourseName, semester } = req.body;
 
-      const docRef = db.collection('courses').doc(syllabusId);
+      const docRef = db.collection("courses").doc(syllabusId);
       const doc = await docRef.get();
 
       if (!doc.exists) {
-        return res.status(404).json({ message: 'Syllabus not found' });
+        return res.status(404).json({ message: "Syllabus not found" });
       }
 
       const syllabusData = doc.data() as Course;
@@ -138,7 +155,9 @@ export const syllabusController: SyllabusRequestHandlers = {
       if (semester) updateData.semester = semester;
 
       if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ message: 'No fields to update provided' });
+        return res
+          .status(400)
+          .json({ message: "No fields to update provided" });
       }
 
       await docRef.update(updateData);
@@ -146,12 +165,13 @@ export const syllabusController: SyllabusRequestHandlers = {
       return res.status(200).json({
         id: syllabusId,
         ...syllabusData,
-        ...updateData
+        ...updateData,
       });
-
     } catch (error) {
-      console.error('Error updating syllabus:', error);
-      return res.status(500).json({ message: 'Failed to update syllabus', error });
+      console.error("Error updating syllabus:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to update syllabus", error });
     }
-  }
+  },
 };
