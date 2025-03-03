@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db, storage } from '../config/firebase';
-import { Course } from '../models/course';
-import { SyllabusRequestHandlers } from '../types/express';
+import { Course } from './course.type';
+import { SyllabusRequestHandlers } from '../requestTypes';
 
 export const syllabusController: SyllabusRequestHandlers = {
   uploadSyllabus: async (req: Request, res: Response) => {

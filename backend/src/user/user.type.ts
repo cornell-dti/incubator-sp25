@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
-import { Course } from "./course";
+import { Course } from "../course/course.type";
 
 export interface User {
   id?: string;

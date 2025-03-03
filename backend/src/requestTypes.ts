@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { User } from "../models/user";
-import { Course } from "../models/course";
+import { User } from "./user/user.type";
+import { Course } from "./course/course.type";
 
 export interface RequestHandler<P = {}, B = {}, Q = {}> {
   (req: Request<P, any, B, Q>, res: Response, next?: NextFunction):
