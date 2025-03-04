@@ -1,7 +1,8 @@
+import { Syllabus } from "../syllabus/syllabus.type";
+
 export interface Course {
   id?: string;
   courseCode: string;
-  fullCourseName: string;
-  semester: string;
-  fileUrl: string;
+  courseName: string;
+  syllabi: Syllabus[];
 }

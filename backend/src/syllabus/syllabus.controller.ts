@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { db, storage } from "../config/firebase";
-import { Course } from "./course.type";
+import admin from "../config/firebase";
+import { Syllabus } from "./syllabus.type";
 import { SyllabusRequestHandlers } from "../requestTypes";
 
 export const syllabusController: SyllabusRequestHandlers = {
@@ -20,7 +21,7 @@ export const syllabusController: SyllabusRequestHandlers = {
       }
 
       // create new file name for each syllabus upload for now
-      const fileName = `${Date.now()}-${req.file.originalname}`;
+      const fileName = `${courseCode}-${semester}`;
       const bucket = storage.bucket();
       const file = bucket.file(`syllabi/${fileName}`);
 
@@ -56,14 +57,40 @@ export const syllabusController: SyllabusRequestHandlers = {
 
       const fileUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
 
-      const syllabusData: Course = {
-        courseCode,
-        fullCourseName,
+      const coursesQuery = await db
+        .collection("courses")
+        .where("courseCode", "==", courseCode)
+        .limit(1)
+        .get();
+
+      let courseId;
+
+      if (coursesQuery.empty) {
+        const newCourseRef = await db.collection("courses").add({
+          courseCode,
+          courseName: fullCourseName,
+          syllabi: [],
+        });
+        courseId = newCourseRef.id;
+      } else {
+        courseId = coursesQuery.docs[0].id;
+      }
+
+      const syllabusData: Syllabus = {
+        courseId,
         semester,
-        fileUrl,
+        syllabusUploadPath: fileUrl,
       };
 
-      const docRef = await db.collection("courses").add(syllabusData);
+      const docRef = await db.collection("syllabi").add(syllabusData);
+      await db
+        .collection("courses")
+        .doc(courseId)
+        .update({
+          syllabi: admin.firestore.FieldValue.arrayUnion({
+            syllabusData,
+          }),
+        });
 
       return res.status(201).json({
         id: docRef.id,
@@ -104,18 +131,18 @@ export const syllabusController: SyllabusRequestHandlers = {
     try {
       const syllabusId = req.params.id;
 
-      const docRef = db.collection("courses").doc(syllabusId);
+      const docRef = db.collection("syllabi").doc(syllabusId);
       const doc = await docRef.get();
 
       if (!doc.exists) {
         return res.status(404).json({ message: "Syllabus not found" });
       }
 
-      const syllabusData = doc.data() as Course;
+      const syllabusData = doc.data() as Syllabus;
 
-      if (syllabusData.fileUrl) {
+      if (syllabusData.syllabusUploadPath) {
         try {
-          const fileUrl = new URL(syllabusData.fileUrl);
+          const fileUrl = new URL(syllabusData.syllabusUploadPath);
           const filePath = fileUrl.pathname.split("/").slice(2).join("/");
 
           await storage.bucket().file(filePath).delete();
@@ -138,20 +165,27 @@ export const syllabusController: SyllabusRequestHandlers = {
   updateSyllabusById: async (req: Request, res: Response) => {
     try {
       const syllabusId = req.params.id;
-      const { courseCode, fullCourseName, semester } = req.body;
+      const { courseCode, semester } = req.body;
 
-      const docRef = db.collection("courses").doc(syllabusId);
+      const docRef = db.collection("syllabi").doc(syllabusId);
       const doc = await docRef.get();
 
       if (!doc.exists) {
         return res.status(404).json({ message: "Syllabus not found" });
       }
 
-      const syllabusData = doc.data() as Course;
+      const syllabusData = doc.data() as Syllabus;
 
-      const updateData: Partial<Course> = {};
-      if (courseCode) updateData.courseCode = courseCode;
-      if (fullCourseName) updateData.fullCourseName = fullCourseName;
+      const updateData: Partial<Syllabus> = {};
+      if (courseCode) {
+        const courseQuery = await db
+          .collection("courses")
+          .where("courseCode", "==", courseCode)
+          .limit(1)
+          .get();
+
+        updateData.courseId = courseQuery.docs[0].id;
+      }
       if (semester) updateData.semester = semester;
 
       if (Object.keys(updateData).length === 0) {
