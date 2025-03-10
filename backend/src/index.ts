@@ -2,6 +2,8 @@ import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import userRoutes from "./user/user.route";
 import syllabusRoutes from "./syllabus/syllabus.route";
+import eventRoutes from "./event/event.route";
+import todoRoutes from "./todo/todo.route";
 
 dotenv.config();
 
@@ -18,6 +20,8 @@ app.get("/", (req: Request, res: Response) => {
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/syllabi", syllabusRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/todos", todoRoutes);
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
