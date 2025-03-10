@@ -30,13 +30,14 @@ export const todoController: TodoRequestHandlers = {
         !todoData.date ||
         !todoData.eventType ||
         !todoData.priority ||
-        !todoData.userId ||
         !todoData.courseId
       ) {
         return res.status(400).json({
           error: "Missing required fields. All todo properties are required.",
         });
       }
+
+      todoData.userId = res.locals.userId;
 
       const docRef = await db.collection("todos").add(todoData);
 
@@ -57,8 +58,14 @@ export const todoController: TodoRequestHandlers = {
       const todoRef = db.collection("todos").doc(todoId);
       const todoDoc = await todoRef.get();
 
-      if (!todoDoc.exists) {
-        return res.status(404).json({ error: "Todo not found" });
+      const docData = todoDoc.data();
+
+      if (!docData) {
+        return res.status(404).json({ message: "Todo not found" });
+      }
+
+      if (docData.userId !== res.locals.userId) {
+        return res.status(403).json({ message: "Unauthorized" });
       }
 
       await todoRef.update(todoData);
@@ -76,14 +83,20 @@ export const todoController: TodoRequestHandlers = {
     try {
       const todoId = req.params.id;
 
-      const docRef = db.collection("todos").doc(todoId);
-      const doc = await docRef.get();
+      const todoRef = db.collection("todos").doc(todoId);
+      const todoDoc = await todoRef.get();
 
-      if (!doc.exists) {
+      const docData = todoDoc.data();
+
+      if (!docData) {
         return res.status(404).json({ message: "Todo not found" });
       }
 
-      await docRef.delete();
+      if (docData.userId !== res.locals.userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      await todoRef.delete();
 
       return res.status(200).json({ message: "Todo deleted successfully" });
     } catch (error) {
