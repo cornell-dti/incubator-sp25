@@ -27,7 +27,6 @@ export const eventController: EventRequestHandlers = {
 
       if (
         !eventData.courseId ||
-        !eventData.userId ||
         !eventData.title ||
         !eventData.startTime ||
         !eventData.endTime ||
@@ -38,6 +37,8 @@ export const eventController: EventRequestHandlers = {
           error: "Missing required fields. All event properties are required.",
         });
       }
+
+      eventData.userId = res.locals.userId;
 
       const docRef = await db.collection("events").add(eventData);
 
@@ -59,8 +60,14 @@ export const eventController: EventRequestHandlers = {
       const eventRef = db.collection("events").doc(eventId);
       const eventDoc = await eventRef.get();
 
-      if (!eventDoc.exists) {
+      const docData = eventDoc.data();
+
+      if (!docData) {
         return res.status(404).json({ error: "Event not found" });
+      }
+
+      if (docData.userId !== res.locals.userId) {
+        return res.status(403).json({ error: "Unauthorized" });
       }
 
       await eventRef.update(eventData);
@@ -84,8 +91,14 @@ export const eventController: EventRequestHandlers = {
       const eventRef = db.collection("events").doc(eventId);
       const eventDoc = await eventRef.get();
 
-      if (!eventDoc.exists) {
+      const docData = eventDoc.data();
+
+      if (!docData) {
         return res.status(404).json({ error: "Event not found" });
+      }
+
+      if (docData.userId !== res.locals.userId) {
+        return res.status(403).json({ error: "Unauthorized" });
       }
 
       await eventRef.delete();
