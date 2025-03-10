@@ -84,7 +84,7 @@ export const todoController: TodoRequestHandlers = {
       const todoId = req.params.id;
 
       const todoRef = db.collection("todos").doc(todoId);
-      const todoDoc = await docRef.get();
+      const todoDoc = await todoRef.get();
 
       const docData = todoDoc.data();
 
