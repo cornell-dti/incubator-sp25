@@ -80,6 +80,7 @@ export const syllabusController: SyllabusRequestHandlers = {
         courseId,
         semester,
         syllabusUploadPath: fileUrl,
+        events: [],
       };
 
       const docRef = await db.collection("syllabi").add(syllabusData);

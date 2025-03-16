@@ -4,6 +4,6 @@ export interface Course {
   id?: string;
   courseCode: string;
   courseName: string;
-  semester: string;
+  semesters: string[];
   syllabi: Syllabus[];
 }

@@ -7,7 +7,7 @@ export interface Syllabus {
   semester: string;
   // instructor: string;
   syllabusUploadPath: string;
-  // events: Event[];
+  events: Event[];
   // todos: Todo[];
   // gradingPolicy: Map<string, number>;
 }

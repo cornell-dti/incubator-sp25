@@ -62,19 +62,19 @@ export class CourseService {
       const existingCourses = await db
         .collection("courses")
         .where("courseCode", "==", course.courseCode)
-        .where("semester", "==", course.semester)
+        .where("semesters", "array-contains", course.semesters[0])
         .get();
 
       if (!existingCourses.empty) {
         console.log(
-          `    Course ${course.courseCode} already exists for semester ${course.semester}`
+          `    Course ${course.courseCode} already exists for semesters ${course.semesters.join(", ")}`
         );
         return true;
       }
 
       await db.collection("courses").add(course);
       console.log(
-        `    Added new course: ${course.courseCode} - ${course.courseName} for semester ${course.semester}`
+        `    Added new course: ${course.courseCode} - ${course.courseName} for semesters ${course.semesters.join(", ")}`
       );
       return true;
     } catch (error) {
@@ -113,15 +113,37 @@ export class CourseService {
     for (const cls of classes) {
       try {
         const courseCode = `${cls.subject.toUpperCase()} ${cls.catalogNbr}`;
+        const existingCourse = await db
+          .collection("courses")
+          .where("courseCode", "==", courseCode)
+          .limit(1)
+          .get();
 
-        const newCourse: Course = {
-          courseCode,
-          courseName: cls.titleLong,
-          semester: semester,
-          syllabi: [],
-        };
+        let success;
+        if (existingCourse.empty) {
+          const newCourse: Course = {
+            courseCode,
+            courseName: cls.titleLong,
+            semesters: [semester],
+            syllabi: [],
+          };
 
-        const success = await this.saveCourse(newCourse);
+          success = await this.saveCourse(newCourse);
+        } else {
+          const docRef = existingCourse.docs[0].ref;
+          const currentSemesters =
+            existingCourse.docs[0].data().semesters || [];
+
+          if (!currentSemesters.includes(semester)) {
+            await docRef.update({
+              semesters: [semester, ...currentSemesters],
+            });
+            success = true;
+          } else {
+            success = true;
+          }
+        }
+
         if (success) {
           successCount++;
         }
