@@ -65,35 +65,37 @@ export const importPrelims = async (semester: string): Promise<boolean> => {
         eventType: "exam",
       };
 
-      await db.collection("events").add(newEvent);
+      const event = await db.collection("events").add(newEvent);
+      const eventId = event.id;
 
       const syllabusSnapshot = await db
         .collection("syllabi")
         .where("courseId", "==", courseId)
+        .where("semester", "==", semester)
         .limit(1)
         .get();
 
       let syllabusId: string;
       if (syllabusSnapshot.empty) {
-        const newSyllabus: Syllabus = {
+        const newSyllabusRef: Syllabus = {
           courseId,
           semester: semester,
           syllabusUploadPath: "",
-          events: [newEvent],
+          events: [eventId],
         };
-        const newSyllabusRef = await db.collection("syllabi").add(newSyllabus);
-        syllabusId = newSyllabusRef.id;
+        const syllabus = await db.collection("syllabi").add(newSyllabusRef);
+        syllabusId = syllabus.id;
       } else {
         const syllabusRef = syllabusSnapshot.docs[0].ref;
         syllabusId = syllabusSnapshot.docs[0].id;
         const currentEvents = syllabusSnapshot.docs[0].data().events || [];
         await syllabusRef.update({
-          events: [...currentEvents, newEvent],
+          events: [...currentEvents, eventId],
         });
       }
 
       const courseRef = courseSnapshot.docs[0].ref;
-      const currentSyllabi = courseSnapshot.docs[0].data().syllabi || [];
+      const currentSyllabi: string[] = [];
       if (!currentSyllabi.includes(syllabusId)) {
         await courseRef.update({
           syllabi: [syllabusId, ...currentSyllabi],
