@@ -2,7 +2,7 @@ export interface Syllabus {
   id?: string;
   courseId: string;
   semester: string;
-  // instructor: string;
+  // instructors: string[];
   syllabusUploadPath: string;
   events: string[];
   // todos: string[];
