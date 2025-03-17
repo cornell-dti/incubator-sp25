@@ -30,15 +30,15 @@ export const eventController: EventRequestHandlers = {
         !eventData.title ||
         !eventData.startTime ||
         !eventData.endTime ||
-        !eventData.eventType ||
-        !eventData.weight
+        !eventData.eventType
+        // !eventData.weight
       ) {
         return res.status(400).json({
           error: "Missing required fields. All event properties are required.",
         });
       }
 
-      eventData.userId = res.locals.userId;
+      // eventData.userId = res.locals.userId;
 
       const docRef = await db.collection("events").add(eventData);
 
