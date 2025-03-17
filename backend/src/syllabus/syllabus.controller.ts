@@ -105,26 +105,23 @@ export const syllabusController: SyllabusRequestHandlers = {
     }
   },
 
-  getSyllabiByUserId: async (req: Request, res: Response) => {
+  getSyllabusById: async (req: Request, res: Response) => {
     try {
-      const userDoc = await db.collection("users").doc(req.params.id).get();
+      const syllabusId = req.params.id;
+      const syllabusDoc = await db.collection("syllabi").doc(syllabusId).get();
 
-      if (!userDoc.exists) {
-        res.status(404).json({ error: "User not found" });
+      if (!syllabusDoc.exists) {
+        res.status(404).json({ error: "Syllabus not found" });
         return;
       }
 
-      const userData = userDoc.data();
-
-      if (!userData || !userData.courses) {
-        res.status(404).json({ error: "No courses found for this user" });
-        return;
-      }
-
-      res.status(200).json(userData.courses);
+      res.status(200).json({
+        id: syllabusDoc.id,
+        ...syllabusDoc.data(),
+      });
     } catch (error) {
-      console.error("Error fetching syllabi:", error);
-      res.status(500).json({ message: "Failed to fetch syllabi", error });
+      console.error("Error fetching syllabus:", error);
+      res.status(500).json({ message: "Failed to fetch syllabus", error });
     }
   },
 

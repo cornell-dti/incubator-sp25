@@ -23,7 +23,7 @@ router.post(
   upload.single("syllabus"),
   syllabusController.uploadSyllabus
 );
-router.get("/:id", syllabusController.getSyllabiByUserId);
+router.get("/:id", syllabusController.getSyllabusById);
 router.delete("/:id", syllabusController.deleteSyllabusById);
 router.put("/:id", syllabusController.updateSyllabusById);
 
