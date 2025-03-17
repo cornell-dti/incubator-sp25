@@ -94,7 +94,7 @@ export const importPrelims = async (semester: string): Promise<boolean> => {
 
       const courseRef = courseSnapshot.docs[0].ref;
       const currentSyllabi = courseSnapshot.docs[0].data().syllabi || [];
-      if (!currentSyllabi.contains(syllabusId)) {
+      if (!currentSyllabi.includes(syllabusId)) {
         await courseRef.update({
           syllabi: [syllabusId, ...currentSyllabi],
         });
