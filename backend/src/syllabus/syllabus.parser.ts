@@ -1,7 +1,11 @@
 import axios from "axios";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 
-export const parseSyllabus = async (filePath: string) => {
+export const parseSyllabus = async (
+  filePath: string,
+  courseCode: string,
+  instructor: string
+) => {
   try {
     if (!filePath) {
       throw new Error("File path is required");
@@ -39,37 +43,40 @@ export const parseSyllabus = async (filePath: string) => {
             role: "system",
             content:
               "You are a syllabus parser. As input, you will be given a pdf document \
-            of a course syllabus. Your task will be to parse this syllabus and return \
-            key information from the syllabus in the following JSON format:\n \
-            \
-            {\
-            courseCode: CS 2110\n\
-            courseName: Object-Oriented Programming and Data Structures\n\
-            semester: SP25\n\
-            instructors: [Curran Muhlberger, Matthew Eichorn]\n\
-            events[]: {\
-                title: Prelim 1\
-                startTime: 0001-01-01T00:00:00Z\
-                endTime: 0001-01-01T00:00:00Z\
-                eventType: exam\
-                weight: 30%\
-              }\
-            todos[]: {\
-                title: Study Ch 1\
-                date: 0001-01-01T00:00:00Z\
-                eventType: exam\
-                priority: 1\
-              }\
-            gradingPolicy: {exams: 60, assignments: 15, projects: 20, participation: 5}\
-            }\n\
-            \
-            To differentiate between events and tasks, treat events as exams or \
-            presentations, while todos are more like daily tasks.",
+              of a course syllabus. Your task will be to parse this syllabus and return \
+              key information from the syllabus in the following JSON format:\n \
+              \
+              {\
+              todos[]: {\
+                  title: Study Ch 1\
+                  date: 0001-01-01T00:00:00Z\
+                  eventType: exam\
+                  priority: 1\
+                }\
+              gradingPolicy: {exams: 60, assignments: 15, projects: 20, participation: 5}\
+              }\n\
+              \
+              To identify what in a syllabus counts as a to-do, look at due dates for \
+              readings, assignments, projects, etc. For example, if a reading is to be \
+              completed for a certain week, make them due before each class. The class \
+              meeting times should usually be on the syllabus as well. The eventType of a \
+              todo is based on which category it falls under within the categories in gradingPolicy. \
+              Please determine the priority of each task based on the weight given to the \
+              specific category (i.e. projects would be higher priority than assignments, \
+              so project would have priority 1 and assignments would have priority 2).",
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Please parse this syllabus:" },
+              {
+                type: "text",
+                text: `Please parse this syllabus for the class: ${courseCode} with \
+                instructor(s) ${instructor}. Also check to see if this information is \
+                consistent with the syllabus I have uploaded. If I have uploaded a syllabus \
+                that is inconsistent with the course and/or the instructor, please let me know \
+                by saying, "You have provided the wrong syllabus for ${courseCode} with \
+                instructor(s) ${instructor}.`,
+              },
               {
                 type: "file_attachment",
                 file_data: {
