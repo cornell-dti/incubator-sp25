@@ -31,7 +31,7 @@ export interface CourseRequestHandlers {
 
 export interface SyllabusRequestHandlers {
   uploadSyllabus: RequestHandler<{}, Syllabus>;
-  getSyllabiByUserId: RequestHandler<{ id: string }>;
+  getSyllabusById: RequestHandler<{ id: string }>;
   updateSyllabusById: RequestHandler<{ id: string }, Partial<Syllabus>>;
   deleteSyllabusById: RequestHandler<{ id: string }>;
 }
