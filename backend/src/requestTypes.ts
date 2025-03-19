@@ -34,6 +34,7 @@ export interface SyllabusRequestHandlers {
   getSyllabusById: RequestHandler<{ id: string }>;
   updateSyllabusById: RequestHandler<{ id: string }, Partial<Syllabus>>;
   deleteSyllabusById: RequestHandler<{ id: string }>;
+  getParsedText: RequestHandler;
 }
 
 export interface EventRequestHandlers {

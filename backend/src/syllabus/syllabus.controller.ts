@@ -3,6 +3,7 @@ import { db, storage } from "../config/firebase";
 import admin from "../config/firebase";
 import { Syllabus } from "./syllabus.type";
 import { SyllabusRequestHandlers } from "../requestTypes";
+import { parseSyllabus, pdfToText } from "./syllabus.parser";
 
 export const syllabusController: SyllabusRequestHandlers = {
   uploadSyllabus: async (req: Request, res: Response) => {
@@ -11,17 +12,20 @@ export const syllabusController: SyllabusRequestHandlers = {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const { courseCode, fullCourseName, semester } = req.body;
+      const courseCode = req.params.courseCode;
+      const fullCourseName = req.params.courseName;
+      const instructor = req.params.instructor;
+      const semester = req.params.semester;
 
-      if (!courseCode || !fullCourseName || !semester) {
+      if (!courseCode || !fullCourseName || !semester || !instructor) {
         return res.status(400).json({
           message:
-            "Missing required fields: courseCode, fullCourseName, and semester are required",
+            "Missing required fields: courseCode, fullCourseName, instructor, and semester are required",
         });
       }
 
       // create new file name for each syllabus upload for now
-      const fileName = `${courseCode}-${semester}`;
+      const fileName = `${courseCode}-${semester}-${instructor}`;
       const bucket = storage.bucket();
       const file = bucket.file(`syllabi/${fileName}`);
 
@@ -204,6 +208,29 @@ export const syllabusController: SyllabusRequestHandlers = {
       return res
         .status(500)
         .json({ message: "Failed to update syllabus", error });
+    }
+  },
+
+  /**
+   * Parsing syllabus text and inputting into LLM for testing
+   * @param req
+   * @param res
+   * @returns
+   */
+  getParsedText: async (req: Request, res: Response) => {
+    try {
+      const text = await pdfToText("src/syllabus/syllabus.pdf");
+      const courseCode = req.params.courseCode;
+      const instructor = req.params.instructor;
+      const output = await parseSyllabus(text, courseCode, instructor);
+      return res.status(200).json({
+        syllabus: output,
+      });
+    } catch (error) {
+      console.log("error");
+      return res
+        .status(500)
+        .json({ message: "Failed to parse syllabus", error });
     }
   },
 };
