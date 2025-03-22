@@ -8,7 +8,17 @@ export interface ApiClass {
   subject: string;
   catalogNbr: string;
   titleLong: string;
-  enrollGroups: any[];
+  enrollGroups: {
+    classSections: {
+      meetings: {
+        instructors: {
+          firstName: string;
+          middleName?: string;
+          lastName: string;
+        }[];
+      }[];
+    }[];
+  }[];
 }
 
 /**
@@ -52,33 +62,85 @@ export class CourseService {
   }
 
   /**
-   * Saves a course to the database if it doesn't already exist for the given semester
+   * Extracts instructors from a class object
    *
-   * @param course Course data to save
+   * @param cls API class object
+   * @returns Array of unique instructor names across all enrollment groups
+   */
+  extractInstructors(cls: ApiClass): string[] {
+    // If no enroll groups or empty array, return empty array
+    if (!cls.enrollGroups || cls.enrollGroups.length === 0) {
+      return [];
+    }
+
+    // Single set to collect unique instructors
+    const allInstructors = new Set<string>();
+
+    for (const enrollGroup of cls.enrollGroups) {
+      for (const section of enrollGroup.classSections || []) {
+        for (const meeting of section.meetings || []) {
+          for (const instructor of meeting.instructors || []) {
+            const fullName = `${instructor.firstName} ${instructor.lastName}`;
+            allInstructors.add(fullName);
+          }
+        }
+      }
+    }
+
+    // Convert the set to an array
+    return Array.from(allInstructors);
+  }
+
+  /**
+   * Saves or updates a course in the database
+   * Always updates existing courses with new information
+   *
+   * @param course Course data to save or update
+   * @param semester Current semester being processed (for logging only)
    * @returns true if successful, false otherwise
    */
-  async saveCourse(course: Course): Promise<boolean> {
+  async saveCourse(course: Course, semester: string): Promise<boolean> {
     try {
-      const existingCourses = await db
+      // Check if the course already exists by course code
+      const existingCourseDocs = await db
         .collection("courses")
         .where("courseCode", "==", course.courseCode)
-        .where("semesters", "array-contains", course.semesters[0])
+        .limit(1)
         .get();
 
-      if (!existingCourses.empty) {
+      if (!existingCourseDocs.empty) {
+        // Update the existing course with new information
+        const docRef = existingCourseDocs.docs[0].ref;
+        const existingData = existingCourseDocs.docs[0].data();
+
+        // Keep existing syllabi
+        course.syllabi = existingData.syllabi || [];
+
+        // Update the document with new information
+        await docRef.update({
+          courseName: course.courseName,
+          instructors: course.instructors,
+          syllabi: course.syllabi,
+        });
+
         console.log(
-          `    Course ${course.courseCode} already exists for semesters ${course.semesters.join(", ")}`
+          `    Updated course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.instructors.join(", ")}`
         );
         return true;
       }
 
+      // Create a new course if it doesn't exist
       await db.collection("courses").add(course);
+
       console.log(
-        `    Added new course: ${course.courseCode} - ${course.courseName} for semesters ${course.semesters.join(", ")}`
+        `    Added new course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.instructors.join(", ")}`
       );
       return true;
     } catch (error) {
-      console.error(`    Error saving course ${course.courseCode}:`, error);
+      console.error(
+        `    Error saving/updating course ${course.courseCode}:`,
+        error
+      );
       return false;
     }
   }
@@ -113,36 +175,20 @@ export class CourseService {
     for (const cls of classes) {
       try {
         const courseCode = `${cls.subject.toUpperCase()} ${cls.catalogNbr}`;
-        const existingCourse = await db
-          .collection("courses")
-          .where("courseCode", "==", courseCode)
-          .limit(1)
-          .get();
 
-        let success;
-        if (existingCourse.empty) {
-          const newCourse: Course = {
-            courseCode,
-            courseName: cls.titleLong,
-            semesters: [semester],
-            syllabi: [],
-          };
+        // Extract instructors from the class
+        const instructors = this.extractInstructors(cls);
 
-          success = await this.saveCourse(newCourse);
-        } else {
-          const docRef = existingCourse.docs[0].ref;
-          const currentSemesters =
-            existingCourse.docs[0].data().semesters || [];
+        // Create a new course object
+        const course: Course = {
+          courseCode,
+          courseName: cls.titleLong,
+          instructors,
+          syllabi: [], // This will be overwritten with existing syllabi if the course exists
+        };
 
-          if (!currentSemesters.includes(semester)) {
-            await docRef.update({
-              semesters: [semester, ...currentSemesters],
-            });
-            success = true;
-          } else {
-            success = true;
-          }
-        }
+        // Save or update the course
+        const success = await this.saveCourse(course, semester);
 
         if (success) {
           successCount++;
