@@ -1,12 +1,18 @@
 import { Request, Response } from "express";
 import { db, storage } from "../config/firebase";
-import admin from "../config/firebase";
 import { Syllabus } from "./syllabus.type";
 import { Course } from "../course/course.type";
 import { SyllabusRequestHandlers } from "../requestTypes";
 import { parseSyllabus, pdfToText } from "./syllabus.parser";
 
 export const syllabusController: SyllabusRequestHandlers = {
+  /**
+   * Handles syllabus uploads into firebase storage and runs the parsing script to
+   * identify all events and todo items associated with a syllabus
+   * @param req request from the API call
+   * @param res response back to the original API call
+   * @returns the current syllabus data stored in the database
+   */
   uploadSyllabus: async (req: Request, res: Response) => {
     try {
       if (!req.file) {
@@ -96,8 +102,10 @@ export const syllabusController: SyllabusRequestHandlers = {
         syllabusData = {
           courseId,
           semester,
+          instructor,
           syllabusUploadPath: fileUrl,
           events: [],
+          todos: [],
         };
 
         const docRef = await db.collection("syllabi").add(syllabusData);
@@ -118,6 +126,8 @@ export const syllabusController: SyllabusRequestHandlers = {
 
         syllabusData = syllabusQuery.docs[0].data() as Syllabus;
       }
+
+      // after testing is finished, add in parser code here to seamlessly update all events and todos into database
 
       return res.status(201).json({
         id: syllabusId,
@@ -238,7 +248,7 @@ export const syllabusController: SyllabusRequestHandlers = {
    * Parsing syllabus text and inputting into LLM for testing
    * @param req
    * @param res
-   * @returns
+   * @returns parsed text in JSON format, error message otherwise
    */
   getParsedText: async (req: Request, res: Response) => {
     try {
