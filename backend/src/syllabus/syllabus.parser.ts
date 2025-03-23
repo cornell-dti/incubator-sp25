@@ -91,7 +91,7 @@ export const parseSyllabus = async (
     ];
 
     const response = await axios.post(
-      "http://localhost:11434/api/chat",
+      "http://localhost:11434/api/chat", // may consider using google gemini or another model, current output not super complete
       {
         model: "llama3.2",
         messages: messages,

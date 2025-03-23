@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { db, storage } from "../config/firebase";
 import admin from "../config/firebase";
 import { Syllabus } from "./syllabus.type";
+import { Course } from "../course/course.type";
 import { SyllabusRequestHandlers } from "../requestTypes";
 import { parseSyllabus, pdfToText } from "./syllabus.parser";
 
@@ -70,35 +71,56 @@ export const syllabusController: SyllabusRequestHandlers = {
       let courseId;
 
       if (coursesQuery.empty) {
-        const newCourseRef = await db.collection("courses").add({
+        const newCourse: Course = {
           courseCode,
           courseName: fullCourseName,
+          semesters: [semester],
           syllabi: [],
-        });
+        };
+        const newCourseRef = await db.collection("courses").add(newCourse);
         courseId = newCourseRef.id;
       } else {
         courseId = coursesQuery.docs[0].id;
       }
 
-      const syllabusData: Syllabus = {
-        courseId,
-        semester,
-        syllabusUploadPath: fileUrl,
-        events: [],
-      };
+      const syllabusQuery = await db
+        .collection("syllabi")
+        .where("courseId", "==", courseId)
+        .where("semester", "==", semester)
+        .limit(1)
+        .get();
 
-      const docRef = await db.collection("syllabi").add(syllabusData);
-      await db
-        .collection("courses")
-        .doc(courseId)
-        .update({
-          syllabi: admin.firestore.FieldValue.arrayUnion({
-            syllabusData,
-          }),
-        });
+      let syllabusId;
+      let syllabusData: Syllabus;
+      if (syllabusQuery.empty) {
+        syllabusData = {
+          courseId,
+          semester,
+          syllabusUploadPath: fileUrl,
+          events: [],
+        };
+
+        const docRef = await db.collection("syllabi").add(syllabusData);
+        syllabusId = docRef.id;
+
+        await db
+          .collection("courses")
+          .doc(courseId)
+          .update({
+            syllabi: [syllabusId],
+          });
+      } else {
+        syllabusId = syllabusQuery.docs[0].id;
+        await db
+          .collection("syllabi")
+          .doc(syllabusId)
+          .update({ syllabusUploadPath: fileUrl });
+
+        syllabusData = syllabusQuery.docs[0].data() as Syllabus;
+      }
 
       return res.status(201).json({
-        id: docRef.id,
+        id: syllabusId,
         ...syllabusData,
       });
     } catch (error) {
@@ -167,7 +189,8 @@ export const syllabusController: SyllabusRequestHandlers = {
   updateSyllabusById: async (req: Request, res: Response) => {
     try {
       const syllabusId = req.params.id;
-      const { courseCode, semester } = req.body;
+      const courseCode = req.params.courseCode;
+      const semester = req.params.semester;
 
       const docRef = db.collection("syllabi").doc(syllabusId);
       const doc = await docRef.get();
