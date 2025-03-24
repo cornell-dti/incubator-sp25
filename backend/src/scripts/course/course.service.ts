@@ -13,7 +13,6 @@ export interface ApiClass {
       meetings: {
         instructors: {
           firstName: string;
-          middleName?: string;
           lastName: string;
         }[];
       }[];
@@ -65,7 +64,7 @@ export class CourseService {
    * Extracts instructors from a class object
    *
    * @param cls API class object
-   * @returns Array of unique instructor names across all enrollment groups
+   * @returns Array of unique instructor name groups (grouped by enroll group i.e. different sections)
    */
   extractInstructors(cls: ApiClass): string[] {
     // If no enroll groups or empty array, return empty array
@@ -73,22 +72,32 @@ export class CourseService {
       return [];
     }
 
-    // Single set to collect unique instructors
-    const allInstructors = new Set<string>();
+    // Set to track unique instructor groups
+    const uniqueInstructorGroups = new Set<string>();
 
+    // Process each enrollGroup
     for (const enrollGroup of cls.enrollGroups) {
+      const instructorsInGroup = new Set<string>();
+
       for (const section of enrollGroup.classSections || []) {
         for (const meeting of section.meetings || []) {
           for (const instructor of meeting.instructors || []) {
             const fullName = `${instructor.firstName} ${instructor.lastName}`;
-            allInstructors.add(fullName);
+            instructorsInGroup.add(fullName);
           }
         }
       }
+
+      // Concatenate instructor names in one enroll group
+      if (instructorsInGroup.size > 0) {
+        const instructorsArray = Array.from(instructorsInGroup).sort();
+        const instructorGroupString = instructorsArray.join(", ");
+        uniqueInstructorGroups.add(instructorGroupString);
+      }
     }
 
-    // Convert the set to an array
-    return Array.from(allInstructors);
+    // Convert set to array
+    return Array.from(uniqueInstructorGroups);
   }
 
   /**
@@ -124,7 +133,7 @@ export class CourseService {
         });
 
         console.log(
-          `    Updated course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.instructors.join(", ")}`
+          `    Updated course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.instructors.join(" | ")}`
         );
         return true;
       }
@@ -133,7 +142,7 @@ export class CourseService {
       await db.collection("courses").add(course);
 
       console.log(
-        `    Added new course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.instructors.join(", ")}`
+        `    Added new course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.instructors.join(" | ")}`
       );
       return true;
     } catch (error) {
