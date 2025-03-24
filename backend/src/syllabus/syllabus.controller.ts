@@ -80,7 +80,7 @@ export const syllabusController: SyllabusRequestHandlers = {
         const newCourse: Course = {
           courseCode,
           courseName: fullCourseName,
-          semesters: [semester],
+          instructors: [instructor],
           syllabi: [],
         };
         const newCourseRef = await db.collection("courses").add(newCourse);
