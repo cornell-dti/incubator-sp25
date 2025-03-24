@@ -53,9 +53,10 @@ export const parseSyllabus = async (
       {
         role: "system",
         content:
-          "You are a syllabus parser. As input, you will be given a pdf document \
-          of a course syllabus. Your task will be to parse this syllabus and return \
-          key information from the syllabus in the following JSON format:\n \
+          "You are a syllabus parser. As input, you will be given a parsed-text \
+          version of a pdf document of a course syllabus. Your task will be to parse \
+          this syllabus and return key information from the syllabus in the following \
+          JSON format:\n \
           \
           {\
           todos[]: [\
