@@ -1,27 +1,38 @@
 import { Request, Response } from "express";
 import { db, storage } from "../config/firebase";
-import admin from "../config/firebase";
 import { Syllabus } from "./syllabus.type";
+import { Course } from "../course/course.type";
 import { SyllabusRequestHandlers } from "../requestTypes";
+import { parseSyllabus, pdfToText } from "./syllabus.parser";
 
 export const syllabusController: SyllabusRequestHandlers = {
+  /**
+   * Handles syllabus uploads into firebase storage and runs the parsing script to
+   * identify all events and todo items associated with a syllabus
+   * @param req request from the API call
+   * @param res response back to the original API call
+   * @returns the current syllabus data stored in the database
+   */
   uploadSyllabus: async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const { courseCode, fullCourseName, semester } = req.body;
+      const courseCode = req.params.courseCode;
+      const fullCourseName = req.params.courseName;
+      const instructor = req.params.instructor;
+      const semester = req.params.semester;
 
-      if (!courseCode || !fullCourseName || !semester) {
+      if (!courseCode || !fullCourseName || !semester || !instructor) {
         return res.status(400).json({
           message:
-            "Missing required fields: courseCode, fullCourseName, and semester are required",
+            "Missing required fields: courseCode, fullCourseName, instructor, and semester are required",
         });
       }
 
       // create new file name for each syllabus upload for now
-      const fileName = `${courseCode}-${semester}`;
+      const fileName = `${courseCode}-${semester}-${instructor}`;
       const bucket = storage.bucket();
       const file = bucket.file(`syllabi/${fileName}`);
 
@@ -66,35 +77,60 @@ export const syllabusController: SyllabusRequestHandlers = {
       let courseId;
 
       if (coursesQuery.empty) {
-        const newCourseRef = await db.collection("courses").add({
+        const newCourse: Course = {
           courseCode,
           courseName: fullCourseName,
+          instructors: [instructor],
           syllabi: [],
-        });
+        };
+        const newCourseRef = await db.collection("courses").add(newCourse);
         courseId = newCourseRef.id;
       } else {
         courseId = coursesQuery.docs[0].id;
       }
 
-      const syllabusData: Syllabus = {
-        courseId,
-        semester,
-        syllabusUploadPath: fileUrl,
-        events: [],
-      };
+      const syllabusQuery = await db
+        .collection("syllabi")
+        .where("courseId", "==", courseId)
+        .where("semester", "==", semester)
+        .limit(1)
+        .get();
 
-      const docRef = await db.collection("syllabi").add(syllabusData);
-      await db
-        .collection("courses")
-        .doc(courseId)
-        .update({
-          syllabi: admin.firestore.FieldValue.arrayUnion({
-            syllabusData,
-          }),
-        });
+      let syllabusId;
+      let syllabusData: Syllabus;
+      if (syllabusQuery.empty) {
+        syllabusData = {
+          courseId,
+          semester,
+          instructor,
+          syllabusUploadPath: fileUrl,
+          events: [],
+          todos: [],
+        };
+
+        const docRef = await db.collection("syllabi").add(syllabusData);
+        syllabusId = docRef.id;
+
+        await db
+          .collection("courses")
+          .doc(courseId)
+          .update({
+            syllabi: [syllabusId],
+          });
+      } else {
+        syllabusId = syllabusQuery.docs[0].id;
+        await db
+          .collection("syllabi")
+          .doc(syllabusId)
+          .update({ syllabusUploadPath: fileUrl });
+
+        syllabusData = syllabusQuery.docs[0].data() as Syllabus;
+      }
+
+      // after testing is finished, add in parser code here to seamlessly update all events and todos into database
 
       return res.status(201).json({
-        id: docRef.id,
+        id: syllabusId,
         ...syllabusData,
       });
     } catch (error) {
@@ -163,7 +199,8 @@ export const syllabusController: SyllabusRequestHandlers = {
   updateSyllabusById: async (req: Request, res: Response) => {
     try {
       const syllabusId = req.params.id;
-      const { courseCode, semester } = req.body;
+      const courseCode = req.params.courseCode;
+      const semester = req.params.semester;
 
       const docRef = db.collection("syllabi").doc(syllabusId);
       const doc = await docRef.get();
@@ -204,6 +241,29 @@ export const syllabusController: SyllabusRequestHandlers = {
       return res
         .status(500)
         .json({ message: "Failed to update syllabus", error });
+    }
+  },
+
+  /**
+   * Parsing syllabus text and inputting into LLM for testing
+   * @param req
+   * @param res
+   * @returns parsed text in JSON format, error message otherwise
+   */
+  getParsedText: async (req: Request, res: Response) => {
+    try {
+      const text = await pdfToText("src/syllabus/syllabus.pdf");
+      const courseCode = req.params.courseCode;
+      const instructor = req.params.instructor;
+      const output = await parseSyllabus(text, courseCode, instructor, "");
+      return res.status(200).json({
+        syllabus: output,
+      });
+    } catch (error) {
+      console.log("error");
+      return res
+        .status(500)
+        .json({ message: "Failed to parse syllabus", error });
     }
   },
 };
