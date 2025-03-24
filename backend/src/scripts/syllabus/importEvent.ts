@@ -80,8 +80,10 @@ export const importPrelims = async (semester: string): Promise<boolean> => {
         const newSyllabusRef: Syllabus = {
           courseId,
           semester: semester,
+          instructor: "",
           syllabusUploadPath: "",
           events: [eventId],
+          todos: [],
         };
         const syllabus = await db.collection("syllabi").add(newSyllabusRef);
         syllabusId = syllabus.id;
