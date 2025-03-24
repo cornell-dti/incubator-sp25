@@ -255,7 +255,7 @@ export const syllabusController: SyllabusRequestHandlers = {
       const text = await pdfToText("src/syllabus/syllabus.pdf");
       const courseCode = req.params.courseCode;
       const instructor = req.params.instructor;
-      const output = await parseSyllabus(text, courseCode, instructor);
+      const output = await parseSyllabus(text, courseCode, instructor, "");
       return res.status(200).json({
         syllabus: output,
       });

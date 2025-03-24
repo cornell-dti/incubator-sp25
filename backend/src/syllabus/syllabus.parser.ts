@@ -45,7 +45,8 @@ export const pdfToText = async (filePath: string): Promise<string> => {
 export const parseSyllabus = async (
   syllabusText: string,
   courseCode: string,
-  instructor: string
+  instructor: string,
+  termDates: string
 ) => {
   try {
     const messages: Message[] = [
@@ -57,12 +58,26 @@ export const parseSyllabus = async (
           key information from the syllabus in the following JSON format:\n \
           \
           {\
-          todos[]: {\
+          todos[]: [\
+            {\
+              title: Complete Shakespeare Romeo & Juliet Ch 1\
+              date: 2025-01-01T00:00:00Z\
+              eventType: assignment\
+              priority: 3\
+            },\
+            {\
               title: Study Ch 1\
-              date: 0001-01-01T00:00:00Z\
-              eventType: exam\
+              date: 2025-01-31T00:00:00Z\
+              eventType: exams\
               priority: 1\
+            },\
+            {\
+              title: Complete final project\
+              date: 2025-05-01T00:00:00Z\
+              eventType: projects\
+              priority: 2\
             }\
+          ]\
           gradingPolicy: {exams: 60, assignments: 15, projects: 20, participation: 5}\
           }\n\
           \
@@ -74,6 +89,11 @@ export const parseSyllabus = async (
           Please determine the priority of each task based on the weight given to the \
           specific category (i.e. projects would be higher priority than assignments, \
           so project would have priority 1 and assignments would have priority 2).",
+      },
+      {
+        role: "system",
+        content: `To help with knowing which dates correspond to which weeks, here's \
+            the academic term dates for this semester: ${termDates}`,
       },
       {
         role: "user",
@@ -93,7 +113,7 @@ export const parseSyllabus = async (
     const response = await axios.post(
       "http://localhost:11434/api/chat", // may consider using google gemini or another model, current output not super complete
       {
-        model: "llama3.2",
+        model: "deepseek-v3",
         messages: messages,
         stream: false,
       },
