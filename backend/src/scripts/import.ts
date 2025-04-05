@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { importCoursesForSemesters } from "./course/importSemester";
-import { importPrelims } from "./syllabus/importEvent";
+import { importFinals, importPrelims } from "./syllabus/importEvent";
 
 async function main() {
   // Get command line arguments (skipping the first two which are node and script path)
@@ -17,11 +17,15 @@ async function main() {
     console.log(
       "  npm run import-syllabi prelims [semester]             # Import prelim exam dates"
     );
+    console.log(
+      "  npm run import-syllabi finals [semester]              # Import final exam dates"
+    );
     console.log("");
     console.log("Examples:");
     console.log("  npm run import FA23");
     console.log("  npm run import SP24 FA24");
     console.log("  npm run import prelims SP25");
+    console.log("  npm run import finals SP25");
     process.exit(1);
   }
 
@@ -48,6 +52,30 @@ async function main() {
     } catch (error) {
       console.error(
         "An unexpected error occurred during prelim import:",
+        error
+      );
+      process.exit(1);
+    }
+  } else if (args.includes("finals")) {
+    console.log("***** Starting final exam dates import *****");
+
+    try {
+      const success = await importFinals(semesters[1]);
+
+      if (success) {
+        console.log(
+          "***** Final exam dates import completed successfully *****"
+        );
+        process.exit(0);
+      } else {
+        console.error(
+          "***** Final exam dates import completed with errors *****"
+        );
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error(
+        "An unexpected error occurred during final exam import:",
         error
       );
       process.exit(1);
