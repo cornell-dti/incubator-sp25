@@ -145,6 +145,7 @@ export const importFinals = async (semester: string): Promise<Boolean> => {
       const dateString = examDate.toLocaleString("en-US", { timeZone });
       const tzExamDate = new Date(dateString);
       let timeSplit = exam.time.split(":");
+      timeSplit[0] = (parseInt(timeSplit[0]) - 1).toString();
 
       if (exam.type === "Exam") {
         const startTime = new Date(tzExamDate);
