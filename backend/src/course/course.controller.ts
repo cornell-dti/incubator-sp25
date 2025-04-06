@@ -1,6 +1,6 @@
 import { db } from "../config/firebase";
-import { Course } from "./course.type";
-import { CourseRequestHandlers } from "../requestTypes";
+import { Course } from "../types";
+import { CourseRequestHandlers } from "../types/requests";
 
 export const courseController: CourseRequestHandlers = {
   getAllCourses: async (req, res) => {
@@ -21,12 +21,16 @@ export const courseController: CourseRequestHandlers = {
       res.status(500).json({ error: "Failed to retrieve courses" });
     }
   },
-  getCourseById: async (req, res) => {
+  getCourseByCode: async (req, res) => {
     try {
-      const courseId = req.params.id;
-      const courseDoc = await db.collection("courses").doc(courseId).get();
+      const courseCode = req.params.code;
+      const courseRef = db
+        .collection("courses")
+        .where("courseCode", "==", courseCode);
+      const courseSnapshot = await courseRef.get();
+      const courseDoc = courseSnapshot.docs[0];
 
-      if (!courseDoc.exists) {
+      if (!courseDoc) {
         return res.status(404).json({ error: "Course not found" });
       }
 

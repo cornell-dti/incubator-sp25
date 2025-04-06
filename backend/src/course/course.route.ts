@@ -4,7 +4,7 @@ import { courseController } from "./course.controller";
 const router = Router();
 
 router.get("/", courseController.getAllCourses);
-router.get("/:id", courseController.getCourseById);
+router.get("/:code", courseController.getCourseByCode);
 router.post("/", courseController.createCourse);
 router.put("/:id", courseController.updateCourse);
 router.delete("/:id", courseController.deleteCourse);

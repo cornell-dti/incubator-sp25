@@ -1,6 +1,6 @@
 import { db } from "../config/firebase";
-import { Event } from "./event.type";
-import { EventRequestHandlers } from "../requestTypes";
+import { Event } from "../types/";
+import { EventRequestHandlers } from "../types/requests";
 
 export const eventController: EventRequestHandlers = {
   getAllEvents: async (req, res) => {

@@ -1,9 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { User } from "./user/user.type";
-import { Course } from "./course/course.type";
-import { Syllabus } from "./syllabus/syllabus.type";
-import { Event } from "./event/event.type";
-import { Todo } from "./todo/todo.type";
+import { User, Course, Syllabus, Event, Todo } from "./models";
 
 export interface RequestHandler<P = {}, B = {}, Q = {}> {
   (
@@ -23,7 +19,7 @@ export interface UserRequestHandlers {
 
 export interface CourseRequestHandlers {
   getAllCourses: RequestHandler;
-  getCourseById: RequestHandler<{ id: string }>;
+  getCourseByCode: RequestHandler<{ code: string }>;
   createCourse: RequestHandler<{}, Course>;
   updateCourse: RequestHandler<{ id: string }, Partial<Course>>;
   deleteCourse: RequestHandler<{ id: string }>;

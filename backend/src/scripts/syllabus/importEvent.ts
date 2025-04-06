@@ -1,8 +1,6 @@
 import { syllabusService } from "./syllabus.service";
 import { db } from "../../config/firebase";
-import { Syllabus } from "../../syllabus/syllabus.type";
-import { Event } from "../../event/event.type";
-import { Todo } from "../../todo/todo.type";
+import { Syllabus, Event, Todo } from "../../types";
 import { Timestamp } from "firebase-admin/firestore";
 
 export const importPrelims = async (semester: string): Promise<boolean> => {

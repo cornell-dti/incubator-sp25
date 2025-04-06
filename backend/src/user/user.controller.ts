@@ -1,7 +1,7 @@
 import { db } from "../config/firebase";
-import { User } from "./user.type";
+import { User } from "../types";
 import { Timestamp } from "firebase-admin/firestore";
-import { UserRequestHandlers } from "../requestTypes";
+import { UserRequestHandlers } from "../types/requests";
 
 export const userController: UserRequestHandlers = {
   getAllUsers: async (req, res) => {
