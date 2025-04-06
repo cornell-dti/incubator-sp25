@@ -34,7 +34,6 @@ export const authController = {
         res.status(201).json({
           id: uid,
           ...userData,
-          isNewUser: true,
         });
         return;
       }
@@ -47,7 +46,6 @@ export const authController = {
       res.status(200).json({
         id: uid,
         ...userDoc.data(),
-        isNewUser: false,
       });
     } catch (error) {
       console.error("Error verifying token:", error);
@@ -60,7 +58,6 @@ export const authController = {
       const { uid } = req.user!;
 
       const userDoc = await db.collection("users").doc(uid).get();
-
       if (!userDoc.exists) {
         res.status(404).json({ error: "User not found" });
         return;
