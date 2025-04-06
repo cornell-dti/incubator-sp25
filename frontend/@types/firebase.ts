@@ -1,13 +1,22 @@
 export interface FirestoreTimestamp {
-  seconds: number;
-  nanoseconds: number;
+  seconds?: number;
+  nanoseconds?: number;
+  _seconds?: number;
+  _nanoseconds?: number;
 }
 
 export const timestampToDate = (
   timestamp?: FirestoreTimestamp
 ): Date | undefined => {
   if (!timestamp) return undefined;
-  return new Date(timestamp.seconds * 1000);
+
+  const seconds = timestamp.seconds || timestamp._seconds;
+
+  if (typeof seconds === "number") {
+    return new Date(seconds * 1000);
+  }
+
+  return undefined;
 };
 
 export const formatTimestamp = (
@@ -15,13 +24,19 @@ export const formatTimestamp = (
   format: string = "short"
 ): string => {
   if (!timestamp) return "N/A";
-  const date = timestampToDate(timestamp);
-  if (!date) return "Invalid Date";
 
-  if (format === "short") {
-    return date.toLocaleDateString();
-  } else if (format === "long") {
-    return date.toLocaleString();
+  const date = timestampToDate(timestamp);
+  if (!date) return "N/A";
+
+  try {
+    if (format === "short") {
+      return date.toLocaleDateString();
+    } else if (format === "long") {
+      return date.toLocaleString();
+    }
+    return date.toISOString();
+  } catch (error) {
+    console.error("Error formatting timestamp:", error);
+    return "N/A";
   }
-  return date.toISOString();
 };
