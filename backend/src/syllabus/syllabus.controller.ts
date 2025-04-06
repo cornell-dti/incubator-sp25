@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { db, storage } from "../config/firebase";
-import { Syllabus } from "./syllabus.type";
-import { Course } from "../course/course.type";
-import { SyllabusRequestHandlers } from "../requestTypes";
+import { Syllabus, Course } from "../types";
+import { SyllabusRequestHandlers } from "../types/requests";
 import { parseSyllabus, pdfToText } from "./syllabus.parser";
 
 export const syllabusController: SyllabusRequestHandlers = {

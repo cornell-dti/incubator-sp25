@@ -1,6 +1,6 @@
 import { db } from "../config/firebase";
-import { Todo } from "./todo.type";
-import { TodoRequestHandlers } from "../requestTypes";
+import { Todo } from "../types";
+import { TodoRequestHandlers } from "../types/requests";
 
 export const todoController: TodoRequestHandlers = {
   getAllTodos: async (req, res) => {
