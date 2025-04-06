@@ -1,6 +1,5 @@
 import { auth } from "@/lib/firebase";
 import { User, Course } from "@/@types/models";
-import { GetUserResponse, GetCoursesResponse } from "@/@types/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -36,8 +35,8 @@ export const apiService = {
         throw new Error(`Error fetching user: ${response.statusText}`);
       }
 
-      const responseData: GetUserResponse = await response.json();
-      return responseData.data || ({} as User);
+      const user = await response.json();
+      return user;
     } catch (error) {
       console.error("Error getting current user:", error);
       throw error;
@@ -56,8 +55,8 @@ export const apiService = {
         throw new Error(`Error fetching courses: ${response.statusText}`);
       }
 
-      const responseData: GetCoursesResponse = await response.json();
-      return responseData.data || [];
+      const course = await response.json();
+      return course;
     } catch (error) {
       console.error("Error getting courses:", error);
       throw error;

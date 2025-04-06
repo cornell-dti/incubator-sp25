@@ -25,7 +25,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 interface AuthContextType {
   user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>; // <--- Expose the setter
   isNewUser: boolean;
+  setIsNewUser: React.Dispatch<React.SetStateAction<boolean>>; // <--- Optionally expose this setter too
   loading: boolean;
   signInWithGoogle: () => Promise<UserCredential>;
   logout: () => Promise<void>;
@@ -38,7 +40,13 @@ interface AuthContextProviderProps {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  setUser: () => {
+    throw new Error("setUser function not implemented");
+  },
   isNewUser: false,
+  setIsNewUser: () => {
+    throw new Error("setIsNewUser function not implemented");
+  },
   loading: true,
   signInWithGoogle: async () => {
     throw new Error("signInWithGoogle function not implemented");
@@ -77,8 +85,8 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
 
       const responseData: TokenVerificationResponse = await response.json();
 
-      // Set user data and isNewUser flag separately
-      setUser(responseData.data || (responseData as unknown as User)); // Fallback in case the API doesn't use the wrapper format yet
+      // Update local state with the user object and new-user flag
+      setUser(responseData.data || (responseData as unknown as User));
       setIsNewUser(responseData.isNewUser || false);
 
       if (responseData.isNewUser) {
@@ -92,7 +100,7 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     }
   };
 
-  // Get fresh auth token (useful for API calls)
+  // Provide fresh token for API calls
   const getAuthToken = async (): Promise<string | null> => {
     const currentUser = auth.currentUser;
     if (!currentUser) return null;
@@ -126,7 +134,7 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      // Verification happens in the onAuthStateChanged listener
+      // The actual token verification flow is handled in the onAuthStateChanged callback
       return result;
     } catch (error) {
       console.error("Error signing in with Google", error);
@@ -150,10 +158,12 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         isNewUser,
+        setIsNewUser,
+        loading,
         signInWithGoogle,
         logout,
-        loading,
         getAuthToken,
       }}
     >

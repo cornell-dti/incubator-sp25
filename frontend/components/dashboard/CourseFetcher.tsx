@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { CourseCard } from "./CourseCard";
 
 export function CourseFetcher() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [courseIdInput, setCourseIdInput] = useState("");
   const [course, setCourse] = useState<Course | null>(null);
   const [error, setError] = useState("");
@@ -49,13 +49,15 @@ export function CourseFetcher() {
     try {
       const existingCourses = user.courses || [];
       const updatedUser: Partial<User> = {
-        ...user,
         courses: [...existingCourses, course],
       };
 
       await apiService.updateUser(user.id, updatedUser);
 
-      // Optionally re-fetch user data or do setUser(updatedUserFromServer) if needed
+      const refreshedUser = await apiService.getCurrentUser();
+      console.log("Refreshed user:", refreshedUser);
+      setUser(refreshedUser);
+
       alert(`Course "${course.courseCode}" added to your profile!`);
     } catch (error: unknown) {
       console.error("Error adding course to user:", error);
