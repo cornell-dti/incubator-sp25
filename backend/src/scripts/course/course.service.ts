@@ -1,6 +1,6 @@
 import axios from "axios";
 import { db } from "../../config/firebase";
-import { Course } from "../../course/course.type";
+import { Course } from "../../types";
 import { ApiSubject } from "../subject/subject.service";
 
 // Interface representing a class from the API

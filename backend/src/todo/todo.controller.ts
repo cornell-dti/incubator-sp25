@@ -37,8 +37,6 @@ export const todoController: TodoRequestHandlers = {
         });
       }
 
-      todoData.userId = res.locals.userId;
-
       const docRef = await db.collection("todos").add(todoData);
 
       res.status(201).json({
