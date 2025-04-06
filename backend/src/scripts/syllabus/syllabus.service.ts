@@ -6,6 +6,13 @@ export interface ScrapeExam {
   date: string;
 }
 
+export interface ScrapeFinal {
+  courseCode: string;
+  date: string;
+  time: string;
+  type: string;
+}
+
 export class SyllabusService {
   async prelimScraping(): Promise<ScrapeExam[]> {
     try {
@@ -47,6 +54,70 @@ export class SyllabusService {
           date,
         });
       }
+      console.log(`Found ${examData.length} exam entries`);
+      return examData;
+    } catch (error) {
+      console.error("Error scraping data:", error);
+      return [];
+    }
+  }
+
+  async finalScraping(): Promise<ScrapeFinal[]> {
+    try {
+      const response = await axios.get(
+        "https://registrar.cornell.edu/exams/spring-final-exam-schedule"
+      );
+      const selector = cheerio.load(response.data);
+      const examData: ScrapeFinal[] = [];
+      const preContent = selector("pre").text();
+
+      if (!preContent) {
+        console.log("No <pre> content found on the page");
+        return [];
+      }
+
+      const lines = preContent.split("\n").filter((line) => line.trim());
+
+      // Skip header line if it exists
+      const dataLines =
+        lines[0].includes("Exam") && lines[0].includes("Date")
+          ? lines.slice(1)
+          : lines;
+
+      for (const line of dataLines) {
+        if (!line.trim()) continue;
+
+        // Extract course code (department and number)
+        const courseMatch = line.match(/^\s*([A-Z]{2,5})\s+(\d{4})\s+\d{3}/);
+        if (!courseMatch) continue;
+
+        const dept = courseMatch[1];
+        const courseNum = courseMatch[2];
+        const courseCode = `${dept} ${courseNum}`;
+
+        // Extract date and time using regex patterns
+        const dateMatch = line.match(/\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+/);
+        const timeMatch = line.match(/\s+(\d{1,2}:\d{2}\s*[AP]M)\s+/);
+        const typeMatch = line.match(/\s+\d{1,2}:\d{2}\s*[AP]M\s+(.+)$/);
+
+        // differentiate between deliverables and in-person exams
+        let finalType;
+        if (typeMatch && typeMatch[1].includes("Final")) {
+          finalType = "Deadline";
+        } else {
+          finalType = "Exam";
+        }
+
+        if (dateMatch && timeMatch) {
+          examData.push({
+            courseCode,
+            date: dateMatch[1],
+            time: timeMatch[1],
+            type: finalType,
+          });
+        }
+      }
+
       console.log(`Found ${examData.length} exam entries`);
       return examData;
     } catch (error) {
