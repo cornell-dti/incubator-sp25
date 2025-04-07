@@ -4,6 +4,9 @@ export interface Course {
   id?: string;
   courseCode: string;
   courseName: string;
-  instructors: string[];
-  syllabi: Syllabus[];
+  sections: {
+    sectionId: string;
+    instructor: string;
+  }[];
+  // syllabi: Syllabus[];
 }

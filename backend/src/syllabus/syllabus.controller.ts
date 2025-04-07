@@ -22,6 +22,7 @@ export const syllabusController: SyllabusRequestHandlers = {
       const courseCode = req.params.courseCode;
       const fullCourseName = req.params.courseName;
       const instructor = req.params.instructor;
+      const section = req.params.section;
       const semester = req.params.semester;
 
       if (!courseCode || !fullCourseName || !semester || !instructor) {
@@ -80,8 +81,8 @@ export const syllabusController: SyllabusRequestHandlers = {
         const newCourse: Course = {
           courseCode,
           courseName: fullCourseName,
-          instructors: [instructor],
-          syllabi: [],
+          sections: [{ sectionId: section, instructor }],
+          // syllabi: [],
         };
         const newCourseRef = await db.collection("courses").add(newCourse);
         courseId = newCourseRef.id;
@@ -104,8 +105,8 @@ export const syllabusController: SyllabusRequestHandlers = {
           semester,
           instructor,
           syllabusUploadPath: fileUrl,
-          events: [],
-          todos: [],
+          // events: [],
+          // todos: [],
         };
 
         const docRef = await db.collection("syllabi").add(syllabusData);

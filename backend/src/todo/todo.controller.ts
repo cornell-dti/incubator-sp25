@@ -30,14 +30,14 @@ export const todoController: TodoRequestHandlers = {
         !todoData.date ||
         !todoData.eventType ||
         !todoData.priority ||
-        !todoData.courseId
+        !todoData.syllabusId
       ) {
         return res.status(400).json({
           error: "Missing required fields. All todo properties are required.",
         });
       }
 
-      todoData.userId = res.locals.userId;
+      // todoData.userId = res.locals.userId;
 
       const docRef = await db.collection("todos").add(todoData);
 

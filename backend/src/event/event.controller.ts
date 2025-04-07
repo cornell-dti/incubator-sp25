@@ -26,7 +26,7 @@ export const eventController: EventRequestHandlers = {
       const eventData: Event = req.body;
 
       if (
-        !eventData.courseId ||
+        !eventData.syllabusId ||
         !eventData.title ||
         !eventData.startTime ||
         !eventData.endTime ||

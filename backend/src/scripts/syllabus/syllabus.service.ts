@@ -1,9 +1,12 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { db } from "../../config/firebase";
+import { Course } from "../../course/course.type";
 
 export interface ScrapeExam {
   courseCode: string;
   date: string;
+  instructors: string[];
 }
 
 export interface ScrapeFinal {
@@ -11,6 +14,7 @@ export interface ScrapeFinal {
   date: string;
   time: string;
   type: string;
+  instructors: string[];
 }
 
 export class SyllabusService {
@@ -35,11 +39,13 @@ export class SyllabusService {
         if (!line.trim()) continue;
 
         // First, let's extract the course code (at the beginning of the line)
-        const courseCodeMatch = line.match(/^([A-Z]+\s\d{4}(?:\s+\d{3})?)/);
+        const courseCodeMatch = line.match(/^([A-Z]+)\s+(\d{4})\s+(\d{3})?/);
         if (!courseCodeMatch) continue;
 
         let courseCode = courseCodeMatch[1].trim();
-        courseCode = courseCode.replace(/\s+\d{3}$/, "");
+
+        const section = courseCodeMatch[3] || "";
+        const instructors = await this.findInstructors(courseCode, section);
 
         // Now extract the date part (after day of week)
         const dateMatch = line.match(
@@ -52,6 +58,7 @@ export class SyllabusService {
         examData.push({
           courseCode,
           date,
+          instructors,
         });
       }
       console.log(`Found ${examData.length} exam entries`);
@@ -95,6 +102,9 @@ export class SyllabusService {
         const courseNum = courseMatch[2];
         const courseCode = `${dept} ${courseNum}`;
 
+        const section = courseMatch[3];
+        const instructors = await this.findInstructors(courseCode, section);
+
         // Extract date and time using regex patterns
         const dateMatch = line.match(/\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+/);
         const timeMatch = line.match(/\s+(\d{1,2}:\d{2}\s*[AP]M)\s+/);
@@ -114,6 +124,7 @@ export class SyllabusService {
             date: dateMatch[1],
             time: timeMatch[1],
             type: finalType,
+            instructors,
           });
         }
       }
@@ -122,6 +133,42 @@ export class SyllabusService {
       return examData;
     } catch (error) {
       console.error("Error scraping data:", error);
+      return [];
+    }
+  }
+
+  async findInstructors(
+    courseCode: string,
+    section: string
+  ): Promise<string[]> {
+    try {
+      const courseSnapshot = await db
+        .collection("courses")
+        .where("courseCode", "==", courseCode)
+        .limit(1)
+        .get();
+
+      if (courseSnapshot.empty) {
+        return [];
+      }
+
+      const courseData = courseSnapshot.docs[0].data() as Course;
+
+      if (section !== "") {
+        // Find the section in the course data
+        const sectionData = courseData.sections?.find(
+          (s) => s.sectionId === section
+        );
+
+        if (sectionData) {
+          return [sectionData.instructor];
+        }
+      } else {
+        return courseData.sections.map((section) => section.instructor);
+      }
+      return [];
+    } catch (error) {
+      console.error("Error finding instructor:", error);
       return [];
     }
   }

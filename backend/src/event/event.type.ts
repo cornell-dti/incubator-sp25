@@ -2,7 +2,7 @@ import { Timestamp } from "firebase-admin/firestore";
 
 export interface Event {
   id?: string;
-  courseId: string;
+  syllabusId: string;
   // userId: string;
   title: string;
   startTime: Timestamp;

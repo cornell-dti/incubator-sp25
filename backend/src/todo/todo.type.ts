@@ -2,7 +2,7 @@ import { Timestamp } from "firebase-admin/firestore";
 
 export interface Todo {
   id?: string;
-  courseId: string;
+  syllabusId: string;
   title: string;
   date: Timestamp;
   eventType: string;
