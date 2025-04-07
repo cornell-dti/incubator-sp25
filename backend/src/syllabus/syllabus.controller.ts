@@ -81,6 +81,7 @@ export const syllabusController: SyllabusRequestHandlers = {
         const newCourse: Course = {
           courseCode,
           courseName: fullCourseName,
+          semester,
           sections: [{ sectionId: section, instructor }],
           // syllabi: [],
         };

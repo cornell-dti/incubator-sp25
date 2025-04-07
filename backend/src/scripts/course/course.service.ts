@@ -11,6 +11,7 @@ export interface ApiClass {
   enrollGroups: {
     classSections: {
       section: string;
+      ssrComponent: string;
       meetings: {
         instructors: {
           firstName: string;
@@ -77,7 +78,14 @@ export class CourseService {
     }
 
     for (const enrollGroup of cls.enrollGroups) {
+      let addAll = true;
       for (const section of enrollGroup.classSections || []) {
+        if (section.ssrComponent === "LEC") {
+          addAll = false;
+        }
+        if (!addAll && section.ssrComponent !== "LEC") {
+          break;
+        }
         const sectionId = section.section;
         const sectionInstructors: string[] = [];
 
@@ -189,6 +197,7 @@ export class CourseService {
         const course: Course = {
           courseCode,
           courseName: cls.titleLong,
+          semester,
           sections,
           // syllabi: [], // This will be overwritten with existing syllabi if the course exists
         };
