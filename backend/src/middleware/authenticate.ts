@@ -1,21 +1,41 @@
-import { RequestHandler } from "express";
-import admin from "../config/firebase";
+import { Request, Response, NextFunction } from "express";
+import { auth } from "../config/firebase";
 
-const authMiddleware: RequestHandler = async (req, res, next) => {
+export interface AuthRequest extends Request {
+  user?: {
+    uid: string;
+    email: string;
+    name?: string;
+  };
+}
+
+export const authMiddleware = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      res.status(401).json({ error: "Authorization header not found" });
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      res
+        .status(401)
+        .json({ error: "Unauthorized: Missing or invalid token format" });
       return;
     }
-    const token = authHeader.split(" ")[1];
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    res.locals.userId = decodedToken.uid;
+
+    const idToken = authHeader.split("Bearer ")[1];
+    const decodedToken = await auth.verifyIdToken(idToken);
+
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email || "",
+      name: decodedToken.name || "",
+    };
+
     next();
   } catch (error) {
     console.error("Authentication error:", error);
-    res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Unauthorized: Invalid token" });
   }
 };
-
-export default authMiddleware;

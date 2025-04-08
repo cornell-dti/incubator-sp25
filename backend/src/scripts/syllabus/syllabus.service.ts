@@ -1,12 +1,10 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { db } from "../../config/firebase";
-import { Course } from "../../course/course.type";
 
 export interface ScrapeExam {
   courseCode: string;
   date: string;
-  instructors: string[];
+  sectionId: string;
 }
 
 export interface ScrapeFinal {
@@ -14,7 +12,7 @@ export interface ScrapeFinal {
   date: string;
   time: string;
   type: string;
-  instructors: string[];
+  sectionId: string;
 }
 
 export class SyllabusService {
@@ -42,10 +40,9 @@ export class SyllabusService {
         const courseCodeMatch = line.match(/^([A-Z]+)\s+(\d{4})\s+(\d{3})?/);
         if (!courseCodeMatch) continue;
 
-        let courseCode = courseCodeMatch[1].trim();
+        let courseCode = `${courseCodeMatch[1]} ${courseCodeMatch[2]}`;
 
         const section = courseCodeMatch[3] || "";
-        const instructors = await this.findInstructors(courseCode, section);
 
         // Now extract the date part (after day of week)
         const dateMatch = line.match(
@@ -58,7 +55,7 @@ export class SyllabusService {
         examData.push({
           courseCode,
           date,
-          instructors,
+          sectionId: section,
         });
       }
       console.log(`Found ${examData.length} exam entries`);
@@ -95,7 +92,7 @@ export class SyllabusService {
         if (!line.trim()) continue;
 
         // Extract course code (department and number)
-        const courseMatch = line.match(/^\s*([A-Z]{2,5})\s+(\d{4})\s+\d{3}/);
+        const courseMatch = line.match(/^([A-Z]+)\s+(\d{4})\s+(\d{3})?/);
         if (!courseMatch) continue;
 
         const dept = courseMatch[1];
@@ -103,7 +100,6 @@ export class SyllabusService {
         const courseCode = `${dept} ${courseNum}`;
 
         const section = courseMatch[3];
-        const instructors = await this.findInstructors(courseCode, section);
 
         // Extract date and time using regex patterns
         const dateMatch = line.match(/\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+/);
@@ -124,7 +120,7 @@ export class SyllabusService {
             date: dateMatch[1],
             time: timeMatch[1],
             type: finalType,
-            instructors,
+            sectionId: section,
           });
         }
       }
@@ -133,42 +129,6 @@ export class SyllabusService {
       return examData;
     } catch (error) {
       console.error("Error scraping data:", error);
-      return [];
-    }
-  }
-
-  async findInstructors(
-    courseCode: string,
-    section: string
-  ): Promise<string[]> {
-    try {
-      const courseSnapshot = await db
-        .collection("courses")
-        .where("courseCode", "==", courseCode)
-        .limit(1)
-        .get();
-
-      if (courseSnapshot.empty) {
-        return [];
-      }
-
-      const courseData = courseSnapshot.docs[0].data() as Course;
-
-      if (section !== "") {
-        // Find the section in the course data
-        const sectionData = courseData.sections?.find(
-          (s) => s.sectionId === section
-        );
-
-        if (sectionData) {
-          return [sectionData.instructor];
-        }
-      } else {
-        return courseData.sections.map((section) => section.instructor);
-      }
-      return [];
-    } catch (error) {
-      console.error("Error finding instructor:", error);
       return [];
     }
   }

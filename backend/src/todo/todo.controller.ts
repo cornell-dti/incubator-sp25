@@ -1,6 +1,6 @@
 import { db } from "../config/firebase";
-import { Todo } from "./todo.type";
-import { TodoRequestHandlers } from "../requestTypes";
+import { Todo } from "../types";
+import { TodoRequestHandlers } from "../types/requests";
 
 export const todoController: TodoRequestHandlers = {
   getAllTodos: async (req, res) => {
@@ -29,15 +29,14 @@ export const todoController: TodoRequestHandlers = {
         !todoData.title ||
         !todoData.date ||
         !todoData.eventType ||
-        !todoData.priority ||
-        !todoData.syllabusId
+        // !todoData.priority ||
+        !todoData.courseId ||
+        !todoData.userId
       ) {
         return res.status(400).json({
           error: "Missing required fields. All todo properties are required.",
         });
       }
-
-      // todoData.userId = res.locals.userId;
 
       const docRef = await db.collection("todos").add(todoData);
 
