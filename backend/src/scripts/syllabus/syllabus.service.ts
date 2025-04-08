@@ -4,6 +4,7 @@ import * as cheerio from "cheerio";
 export interface ScrapeExam {
   courseCode: string;
   date: string;
+  sectionId: string;
 }
 
 export interface ScrapeFinal {
@@ -11,6 +12,7 @@ export interface ScrapeFinal {
   date: string;
   time: string;
   type: string;
+  sectionId: string;
 }
 
 export class SyllabusService {
@@ -35,11 +37,12 @@ export class SyllabusService {
         if (!line.trim()) continue;
 
         // First, let's extract the course code (at the beginning of the line)
-        const courseCodeMatch = line.match(/^([A-Z]+\s\d{4}(?:\s+\d{3})?)/);
+        const courseCodeMatch = line.match(/^([A-Z]+)\s+(\d{4})\s+(\d{3})?/);
         if (!courseCodeMatch) continue;
 
-        let courseCode = courseCodeMatch[1].trim();
-        courseCode = courseCode.replace(/\s+\d{3}$/, "");
+        let courseCode = `${courseCodeMatch[1]} ${courseCodeMatch[2]}`;
+
+        const section = courseCodeMatch[3] || "";
 
         // Now extract the date part (after day of week)
         const dateMatch = line.match(
@@ -52,6 +55,7 @@ export class SyllabusService {
         examData.push({
           courseCode,
           date,
+          sectionId: section,
         });
       }
       console.log(`Found ${examData.length} exam entries`);
@@ -88,12 +92,14 @@ export class SyllabusService {
         if (!line.trim()) continue;
 
         // Extract course code (department and number)
-        const courseMatch = line.match(/^\s*([A-Z]{2,5})\s+(\d{4})\s+\d{3}/);
+        const courseMatch = line.match(/^([A-Z]+)\s+(\d{4})\s+(\d{3})?/);
         if (!courseMatch) continue;
 
         const dept = courseMatch[1];
         const courseNum = courseMatch[2];
         const courseCode = `${dept} ${courseNum}`;
+
+        const section = courseMatch[3];
 
         // Extract date and time using regex patterns
         const dateMatch = line.match(/\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+/);
@@ -114,6 +120,7 @@ export class SyllabusService {
             date: dateMatch[1],
             time: timeMatch[1],
             type: finalType,
+            sectionId: section,
           });
         }
       }

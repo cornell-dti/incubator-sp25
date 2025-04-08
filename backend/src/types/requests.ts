@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { User, Course, Syllabus, Event, Todo } from "./models";
+import { User, Course, Syllabus, Exam, Todo, FinalDeliverable } from "./models";
 
 export interface RequestHandler<P = {}, B = {}, Q = {}> {
   (
@@ -33,11 +33,18 @@ export interface SyllabusRequestHandlers {
   getParsedText: RequestHandler;
 }
 
-export interface EventRequestHandlers {
-  getAllEvents: RequestHandler;
-  createEvent: RequestHandler<{}, Event>;
-  updateEvent: RequestHandler<{ id: string }, Partial<Event>>;
-  deleteEvent: RequestHandler<{ id: string }>;
+export interface ExamRequestHandlers {
+  getAllExams: RequestHandler;
+  createExam: RequestHandler<{}, Exam>;
+  updateExam: RequestHandler<{ id: string }, Partial<Exam>>;
+  deleteExam: RequestHandler<{ id: string }>;
+}
+
+export interface FinalDeliverableRequestHandlers {
+  getAllDeliverables: RequestHandler;
+  createDeliverable: RequestHandler<{}, FinalDeliverable>;
+  updateDeliverable: RequestHandler<{ id: string }, Partial<FinalDeliverable>>;
+  deleteDeliverable: RequestHandler<{ id: string }>;
 }
 
 export interface TodoRequestHandlers {

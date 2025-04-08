@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { importCoursesForSemesters } from "./course/importSemester";
-import { importFinals, importPrelims } from "./syllabus/importEvent";
+import { importFinals, importPrelims } from "./syllabus/importExams";
 
 async function main() {
   // Get command line arguments (skipping the first two which are node and script path)

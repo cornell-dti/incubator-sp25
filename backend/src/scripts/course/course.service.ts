@@ -10,6 +10,8 @@ export interface ApiClass {
   titleLong: string;
   enrollGroups: {
     classSections: {
+      section: string;
+      ssrComponent: string;
       meetings: {
         instructors: {
           firstName: string;
@@ -66,38 +68,45 @@ export class CourseService {
    * @param cls API class object
    * @returns Array of unique instructor name groups (grouped by enroll group i.e. different sections)
    */
-  extractInstructors(cls: ApiClass): string[] {
-    // If no enroll groups or empty array, return empty array
+  extractInstructors(
+    cls: ApiClass
+  ): { sectionId: string; instructor: string }[] {
+    const sections: { sectionId: string; instructor: string }[] = [];
+
     if (!cls.enrollGroups || cls.enrollGroups.length === 0) {
       return [];
     }
 
-    // Set to track unique instructor groups
-    const uniqueInstructorGroups = new Set<string>();
-
-    // Process each enrollGroup
     for (const enrollGroup of cls.enrollGroups) {
-      const instructorsInGroup = new Set<string>();
-
+      let addAll = true;
       for (const section of enrollGroup.classSections || []) {
+        if (section.ssrComponent === "LEC") {
+          addAll = false;
+        }
+        if (!addAll && section.ssrComponent !== "LEC") {
+          break;
+        }
+        const sectionId = section.section;
+        const sectionInstructors: string[] = [];
+
         for (const meeting of section.meetings || []) {
           for (const instructor of meeting.instructors || []) {
             const fullName = `${instructor.firstName} ${instructor.lastName}`;
-            instructorsInGroup.add(fullName);
+            sectionInstructors.push(fullName);
           }
         }
-      }
 
-      // Concatenate instructor names in one enroll group
-      if (instructorsInGroup.size > 0) {
-        const instructorsArray = Array.from(instructorsInGroup).sort();
-        const instructorGroupString = instructorsArray.join(", ");
-        uniqueInstructorGroups.add(instructorGroupString);
+        // If we found instructors for this section, add it to our sections array
+        if (sectionInstructors.length > 0) {
+          sections.push({
+            sectionId,
+            instructor: sectionInstructors.join(", "),
+          });
+        }
       }
     }
 
-    // Convert set to array
-    return Array.from(uniqueInstructorGroups);
+    return sections;
   }
 
   /**
@@ -120,20 +129,16 @@ export class CourseService {
       if (!existingCourseDocs.empty) {
         // Update the existing course with new information
         const docRef = existingCourseDocs.docs[0].ref;
-        const existingData = existingCourseDocs.docs[0].data();
-
-        // Keep existing syllabi
-        course.syllabi = existingData.syllabi || [];
 
         // Update the document with new information
         await docRef.update({
           courseName: course.courseName,
-          instructors: course.instructors,
-          syllabi: course.syllabi,
+          sections: course.sections,
+          // syllabi: course.syllabi,
         });
 
         console.log(
-          `    Updated course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.instructors.join(" | ")}`
+          `    Updated course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.sections.join(" | ")}`
         );
         return true;
       }
@@ -142,7 +147,7 @@ export class CourseService {
       await db.collection("courses").add(course);
 
       console.log(
-        `    Added new course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.instructors.join(" | ")}`
+        `    Added new course: ${course.courseCode} - ${course.courseName} for semester ${semester} with instructors: ${course.sections.join(" | ")}`
       );
       return true;
     } catch (error) {
@@ -186,14 +191,15 @@ export class CourseService {
         const courseCode = `${cls.subject.toUpperCase()} ${cls.catalogNbr}`;
 
         // Extract instructors from the class
-        const instructors = this.extractInstructors(cls);
+        const sections = this.extractInstructors(cls);
 
         // Create a new course object
         const course: Course = {
           courseCode,
           courseName: cls.titleLong,
-          instructors,
-          syllabi: [], // This will be overwritten with existing syllabi if the course exists
+          semester,
+          sections,
+          // syllabi: [], // This will be overwritten with existing syllabi if the course exists
         };
 
         // Save or update the course
