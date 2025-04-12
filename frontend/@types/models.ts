@@ -14,19 +14,30 @@ export interface Course {
   id?: string;
   courseCode: string;
   courseName: string;
-  instructors: string[];
-  syllabi: Syllabus[];
+  semester: string;
+  sections: {
+    sectionId: string;
+    instructor: string;
+  }[];
+  // syllabi: Syllabus[];
 }
 
-export interface Event {
+export interface Exam {
   id?: string;
   courseId: string;
-  // userId: string;
+  sectionId: string;
   title: string;
   startTime: FirestoreTimestamp;
   endTime: FirestoreTimestamp;
-  eventType: string;
-  // weight: number;
+  examType: string;
+}
+
+export interface FinalDeliverable {
+  id?: string;
+  courseId: string;
+  sectionId: string;
+  title: string;
+  dueDate: FirestoreTimestamp;
 }
 
 export interface Syllabus {
@@ -42,9 +53,10 @@ export interface Syllabus {
 
 export interface Todo {
   id?: string;
+  userId: string;
   courseId: string;
   title: string;
   date: FirestoreTimestamp;
   eventType: string;
-  priority: string;
+  // priority: string;
 }

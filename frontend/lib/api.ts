@@ -63,13 +63,16 @@ export const apiService = {
     }
   },
 
-  getCourseById: async (courseId: string): Promise<Course> => {
+  getCourseByCode: async (courseCode: string): Promise<Course> => {
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
-        method: "GET",
-        headers,
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/courses/${courseCode}`,
+        {
+          method: "GET",
+          headers,
+        }
+      );
       if (!response.ok) {
         throw new Error(`Error fetching course: ${response.statusText}`);
       }
@@ -77,7 +80,7 @@ export const apiService = {
       const course: Course = await response.json();
       return course;
     } catch (error) {
-      console.error("Error getting course by ID:", error);
+      console.error("Error getting course by code:", error);
       throw error;
     }
   },
