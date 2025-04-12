@@ -1,18 +1,44 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, ArrowRight, Calendar, Check, ChevronDown, FileText, Plus, Trash2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  Check,
+  ChevronDown,
+  FileText,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Card, CardContent } from "@/components/ui/card"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from "date-fns"
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { format } from "date-fns";
 
 // Sample data - in a real app this would come from an API
 const sampleSyllabi = [
@@ -46,10 +72,25 @@ const sampleSyllabi = [
       courseName: "Foundations of Artificial Intelligence",
       instructor: "Dr. Smith",
       deadlines: [
-        { id: 1, title: "Homework 1", dueDate: "2023-09-15", type: "Assignment" },
+        {
+          id: 1,
+          title: "Homework 1",
+          dueDate: "2023-09-15",
+          type: "Assignment",
+        },
         { id: 2, title: "Midterm Exam", dueDate: "2023-10-05", type: "Exam" },
-        { id: 3, title: "Project Proposal", dueDate: "2023-10-20", type: "Assignment" },
-        { id: 4, title: "Final Project", dueDate: "2023-12-15", type: "Project" },
+        {
+          id: 3,
+          title: "Project Proposal",
+          dueDate: "2023-10-20",
+          type: "Assignment",
+        },
+        {
+          id: 4,
+          title: "Final Project",
+          dueDate: "2023-12-15",
+          type: "Project",
+        },
       ],
     },
   },
@@ -85,10 +126,25 @@ const sampleSyllabi = [
       courseName: "Linear Algebra",
       instructor: "Dr. Johnson",
       deadlines: [
-        { id: 1, title: "Problem Set 1", dueDate: "2023-09-10", type: "Assignment" },
-        { id: 2, title: "Problem Set 2", dueDate: "2023-09-25", type: "Assignment" },
+        {
+          id: 1,
+          title: "Problem Set 1",
+          dueDate: "2023-09-10",
+          type: "Assignment",
+        },
+        {
+          id: 2,
+          title: "Problem Set 2",
+          dueDate: "2023-09-25",
+          type: "Assignment",
+        },
         { id: 3, title: "Midterm 1", dueDate: "2023-10-10", type: "Exam" },
-        { id: 4, title: "Problem Set 3", dueDate: "2023-10-30", type: "Assignment" },
+        {
+          id: 4,
+          title: "Problem Set 3",
+          dueDate: "2023-10-30",
+          type: "Assignment",
+        },
         { id: 5, title: "Midterm 2", dueDate: "2023-11-15", type: "Exam" },
         { id: 6, title: "Final Exam", dueDate: "2023-12-20", type: "Exam" },
       ],
@@ -125,16 +181,46 @@ const sampleSyllabi = [
       courseName: "Writing in the Disciplines",
       instructor: "Dr. Williams",
       deadlines: [
-        { id: 1, title: "Essay 1 Draft", dueDate: "2023-09-22", type: "Assignment" },
-        { id: 2, title: "Essay 1 Final", dueDate: "2023-10-06", type: "Assignment" },
-        { id: 3, title: "Presentation 1", dueDate: "2023-10-27", type: "Presentation" },
-        { id: 4, title: "Essay 2 Draft", dueDate: "2023-11-10", type: "Assignment" },
-        { id: 5, title: "Essay 2 Final", dueDate: "2023-11-30", type: "Assignment" },
-        { id: 6, title: "Final Presentation", dueDate: "2023-12-08", type: "Presentation" },
+        {
+          id: 1,
+          title: "Essay 1 Draft",
+          dueDate: "2023-09-22",
+          type: "Assignment",
+        },
+        {
+          id: 2,
+          title: "Essay 1 Final",
+          dueDate: "2023-10-06",
+          type: "Assignment",
+        },
+        {
+          id: 3,
+          title: "Presentation 1",
+          dueDate: "2023-10-27",
+          type: "Presentation",
+        },
+        {
+          id: 4,
+          title: "Essay 2 Draft",
+          dueDate: "2023-11-10",
+          type: "Assignment",
+        },
+        {
+          id: 5,
+          title: "Essay 2 Final",
+          dueDate: "2023-11-30",
+          type: "Assignment",
+        },
+        {
+          id: 6,
+          title: "Final Presentation",
+          dueDate: "2023-12-08",
+          type: "Presentation",
+        },
       ],
     },
   },
-]
+];
 
 // Sample Cornell course list for autocomplete
 const cornellCourses = [
@@ -148,7 +234,7 @@ const cornellCourses = [
   { code: "PHYS 2213", name: "Physics II: Electromagnetism" },
   { code: "CHEM 2070", name: "General Chemistry I" },
   { code: "ECON 1110", name: "Introductory Microeconomics" },
-]
+];
 
 // Add this sample instructor list after the cornellCourses array
 const cornellInstructors = [
@@ -162,78 +248,86 @@ const cornellInstructors = [
   { id: 8, name: "Dr. Brown", department: "Biology" },
   { id: 9, name: "Dr. Davis", department: "History" },
   { id: 10, name: "Dr. Wilson", department: "Psychology" },
-]
+];
 
 export default function SyllabusReviewPage() {
-  const router = useRouter()
-  const params = useParams()
-  const syllabusId = Number.parseInt(params.id as string)
+  const router = useRouter();
+  const params = useParams();
+  const syllabusId = Number.parseInt(params.id as string);
 
-  const [syllabus, setSyllabus] = useState(null)
+  const [syllabus, setSyllabus] = useState(null);
   const [courseData, setCourseData] = useState({
     courseCode: "",
     courseName: "",
     instructor: "",
-  })
-  const [deadlines, setDeadlines] = useState([])
-  const [editingDeadlineId, setEditingDeadlineId] = useState(null)
-  const [open, setOpen] = useState(false)
-  const [totalSyllabi, setTotalSyllabi] = useState(sampleSyllabi.length)
+  });
+  const [deadlines, setDeadlines] = useState([]);
+  const [editingDeadlineId, setEditingDeadlineId] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [totalSyllabi, setTotalSyllabi] = useState(sampleSyllabi.length);
 
   // Add this state for the instructor dropdown
-  const [instructorOpen, setInstructorOpen] = useState(false)
+  const [instructorOpen, setInstructorOpen] = useState(false);
 
   useEffect(() => {
     // In a real app, this would be an API call
-    const currentSyllabus = sampleSyllabi.find((s) => s.id === syllabusId)
+    const currentSyllabus = sampleSyllabi.find((s) => s.id === syllabusId);
     if (currentSyllabus) {
-      setSyllabus(currentSyllabus)
+      setSyllabus(currentSyllabus);
       setCourseData({
         courseCode: currentSyllabus.extractedData.courseCode,
         courseName: currentSyllabus.extractedData.courseName,
         instructor: currentSyllabus.extractedData.instructor,
-      })
-      setDeadlines(currentSyllabus.extractedData.deadlines)
+      });
+      setDeadlines(currentSyllabus.extractedData.deadlines);
     }
-  }, [syllabusId])
+  }, [syllabusId]);
 
   const handleCourseSelect = (selectedCourse) => {
     setCourseData({
       ...courseData,
       courseCode: selectedCourse.code,
       courseName: selectedCourse.name,
-    })
-    setOpen(false)
-  }
+    });
+    setOpen(false);
+  };
 
   const handleInputChange = (field, value) => {
     setCourseData({
       ...courseData,
       [field]: value,
-    })
-  }
+    });
+  };
 
   const handleDeadlineChange = (id, field, value) => {
-    setDeadlines(deadlines.map((deadline) => (deadline.id === id ? { ...deadline, [field]: value } : deadline)))
-  }
+    setDeadlines(
+      deadlines.map((deadline) =>
+        deadline.id === id ? { ...deadline, [field]: value } : deadline
+      )
+    );
+  };
 
   const handleNext = () => {
     // In a real app, you would save the changes
     if (syllabusId < totalSyllabi) {
-      router.push(`/onboarding/review/${syllabusId + 1}`)
+      router.push(`/onboarding/review/${syllabusId + 1}`);
     } else {
-      router.push("/dashboard")
+      router.push("/dashboard");
     }
-  }
+  };
 
   const handlePrevious = () => {
     if (syllabusId > 1) {
-      router.push(`/onboarding/review/${syllabusId - 1}`)
+      router.push(`/onboarding/review/${syllabusId - 1}`);
     }
-  }
+  };
 
   if (!syllabus) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -255,8 +349,12 @@ export default function SyllabusReviewPage() {
       <main className="flex-1 py-6">
         <div className="container px-4 md:px-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold">Review Syllabus: {syllabus.fileName}</h1>
-            <p className="text-muted-foreground">Review and edit the extracted information from your syllabus</p>
+            <h1 className="text-2xl font-bold">
+              Review Syllabus: {syllabus.fileName}
+            </h1>
+            <p className="text-muted-foreground">
+              Review and edit the extracted information from your syllabus
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -276,7 +374,9 @@ export default function SyllabusReviewPage() {
             {/* Course Information */}
             <Card className="lg:col-span-1">
               <CardContent className="p-4">
-                <h2 className="text-lg font-semibold mb-4">Course Information</h2>
+                <h2 className="text-lg font-semibold mb-4">
+                  Course Information
+                </h2>
 
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -307,7 +407,9 @@ export default function SyllabusReviewPage() {
                                 >
                                   <Check
                                     className={`mr-2 h-4 w-4 ${
-                                      courseData.courseCode === course.code ? "opacity-100" : "opacity-0"
+                                      courseData.courseCode === course.code
+                                        ? "opacity-100"
+                                        : "opacity-0"
                                     }`}
                                   />
                                   {course.code} - {course.name}
@@ -325,7 +427,9 @@ export default function SyllabusReviewPage() {
                     <Input
                       id="courseName"
                       value={courseData.courseName}
-                      onChange={(e) => handleInputChange("courseName", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("courseName", e.target.value)
+                      }
                       placeholder="Course name"
                     />
                   </div>
@@ -333,7 +437,10 @@ export default function SyllabusReviewPage() {
                   {/* Replace the instructor input field with this dropdown implementation */}
                   <div className="space-y-2">
                     <Label htmlFor="instructor">Instructor</Label>
-                    <Popover open={instructorOpen} onOpenChange={setInstructorOpen}>
+                    <Popover
+                      open={instructorOpen}
+                      onOpenChange={setInstructorOpen}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -356,13 +463,18 @@ export default function SyllabusReviewPage() {
                                   key={instructor.id}
                                   value={instructor.name}
                                   onSelect={() => {
-                                    handleInputChange("instructor", instructor.name)
-                                    setInstructorOpen(false)
+                                    handleInputChange(
+                                      "instructor",
+                                      instructor.name
+                                    );
+                                    setInstructorOpen(false);
                                   }}
                                 >
                                   <Check
                                     className={`mr-2 h-4 w-4 ${
-                                      courseData.instructor === instructor.name ? "opacity-100" : "opacity-0"
+                                      courseData.instructor === instructor.name
+                                        ? "opacity-100"
+                                        : "opacity-0"
                                     }`}
                                   />
                                   {instructor.name} - {instructor.department}
@@ -386,7 +498,10 @@ export default function SyllabusReviewPage() {
                   <Button
                     size="sm"
                     onClick={() => {
-                      const newId = deadlines.length > 0 ? Math.max(...deadlines.map((d) => d.id)) + 1 : 1
+                      const newId =
+                        deadlines.length > 0
+                          ? Math.max(...deadlines.map((d) => d.id)) + 1
+                          : 1;
                       setDeadlines([
                         ...deadlines,
                         {
@@ -395,7 +510,7 @@ export default function SyllabusReviewPage() {
                           dueDate: new Date().toISOString().split("T")[0],
                           type: "Assignment",
                         },
-                      ])
+                      ]);
                     }}
                     className="bg-rose-500 hover:bg-rose-600"
                   >
@@ -406,52 +521,79 @@ export default function SyllabusReviewPage() {
 
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                   {deadlines.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">No deadlines found in this syllabus</p>
+                    <p className="text-center text-muted-foreground py-4">
+                      No deadlines found in this syllabus
+                    </p>
                   ) : (
                     deadlines.map((deadline) => (
-                      <div key={deadline.id} className="border rounded-md p-3 space-y-2 relative">
+                      <div
+                        key={deadline.id}
+                        className="border rounded-md p-3 space-y-2 relative"
+                      >
                         <Button
                           variant="ghost"
                           size="icon"
                           className="absolute top-2 right-2 h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-100"
-                          onClick={() => setDeadlines(deadlines.filter((d) => d.id !== deadline.id))}
+                          onClick={() =>
+                            setDeadlines(
+                              deadlines.filter((d) => d.id !== deadline.id)
+                            )
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete deadline</span>
                         </Button>
 
                         <div className="space-y-2">
-                          <Label htmlFor={`deadline-title-${deadline.id}`}>Title</Label>
+                          <Label htmlFor={`deadline-title-${deadline.id}`}>
+                            Title
+                          </Label>
                           <Input
                             id={`deadline-title-${deadline.id}`}
                             value={deadline.title}
-                            onChange={(e) => handleDeadlineChange(deadline.id, "title", e.target.value)}
+                            onChange={(e) =>
+                              handleDeadlineChange(
+                                deadline.id,
+                                "title",
+                                e.target.value
+                              )
+                            }
                             placeholder="Deadline title"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor={`deadline-type-${deadline.id}`}>Type</Label>
+                          <Label htmlFor={`deadline-type-${deadline.id}`}>
+                            Type
+                          </Label>
                           <Select
                             value={deadline.type}
-                            onValueChange={(value) => handleDeadlineChange(deadline.id, "type", value)}
+                            onValueChange={(value) =>
+                              handleDeadlineChange(deadline.id, "type", value)
+                            }
                           >
                             <SelectTrigger id={`deadline-type-${deadline.id}`}>
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Assignment">Assignment</SelectItem>
+                              <SelectItem value="Assignment">
+                                Assignment
+                              </SelectItem>
                               <SelectItem value="Exam">Exam</SelectItem>
                               <SelectItem value="Quiz">Quiz</SelectItem>
                               <SelectItem value="Project">Project</SelectItem>
                               <SelectItem value="Paper">Paper</SelectItem>
-                              <SelectItem value="Presentation">Presentation</SelectItem>
+                              <SelectItem value="Presentation">
+                                Presentation
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor={`deadline-date-${deadline.id}`}>Due Date</Label>
+                          <Label htmlFor={`deadline-date-${deadline.id}`}>
+                            Due Date
+                          </Label>
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button
@@ -472,7 +614,11 @@ export default function SyllabusReviewPage() {
                                 mode="single"
                                 selected={new Date(deadline.dueDate)}
                                 onSelect={(date) =>
-                                  handleDeadlineChange(deadline.id, "dueDate", date.toISOString().split("T")[0])
+                                  handleDeadlineChange(
+                                    deadline.id,
+                                    "dueDate",
+                                    date.toISOString().split("T")[0]
+                                  )
                                 }
                                 initialFocus
                               />
@@ -488,12 +634,19 @@ export default function SyllabusReviewPage() {
           </div>
 
           <div className="mt-8 flex justify-between">
-            <Button variant="outline" onClick={handlePrevious} disabled={syllabusId <= 1}>
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={syllabusId <= 1}
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Previous
             </Button>
 
-            <Button onClick={handleNext} className="bg-rose-500 hover:bg-rose-600">
+            <Button
+              onClick={handleNext}
+              className="bg-rose-500 hover:bg-rose-600"
+            >
               {syllabusId < totalSyllabi ? (
                 <>
                   Next
@@ -510,5 +663,5 @@ export default function SyllabusReviewPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

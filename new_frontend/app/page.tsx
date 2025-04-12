@@ -1,8 +1,8 @@
-import Link from "next/link"
-import { ArrowRight, Calendar, FileText, Upload } from "lucide-react"
+import Link from "next/link";
+import { ArrowRight, Calendar, FileText, Upload } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -15,7 +15,10 @@ export default function Home() {
               <span className="font-bold">SyllabusSync</span>
             </Link>
             <nav className="flex items-center space-x-6 text-sm font-medium">
-              <Link href="/dashboard" className="transition-colors hover:text-foreground/80">
+              <Link
+                href="/dashboard"
+                className="transition-colors hover:text-foreground/80"
+              >
                 Dashboard
               </Link>
             </nav>
@@ -40,7 +43,8 @@ export default function Home() {
                     Never miss a deadline again
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Upload your syllabi and automatically extract key dates, deadlines, and exams into your calendar.
+                    Upload your syllabi and automatically extract key dates,
+                    deadlines, and exams into your calendar.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -69,9 +73,12 @@ export default function Home() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">How It Works</h2>
+                <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
+                  How It Works
+                </h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  SyllabusSync makes organizing your academic life simple in just three steps.
+                  SyllabusSync makes organizing your academic life simple in
+                  just three steps.
                 </p>
               </div>
             </div>
@@ -98,7 +105,8 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Our algorithm extracts key dates, deadlines, and exam information.
+                    Our algorithm extracts key dates, deadlines, and exam
+                    information.
                   </p>
                 </CardContent>
               </Card>
@@ -126,7 +134,9 @@ export default function Home() {
               <Calendar className="h-5 w-5 text-rose-500" />
               <span className="font-semibold">SyllabusSync</span>
             </Link>
-            <p className="text-sm text-muted-foreground md:max-w-xs">Built by Cornell DTI</p>
+            <p className="text-sm text-muted-foreground md:max-w-xs">
+              Built by Cornell DTI
+            </p>
           </div>
         </div>
         <div className="container py-4 text-center text-sm text-muted-foreground">
@@ -134,5 +144,5 @@ export default function Home() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
