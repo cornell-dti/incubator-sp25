@@ -1,35 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Calendar, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { timestampToDate } from "@/@types";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      const createdAt = timestampToDate(user.createdAt) ?? new Date();
+      const updatedAt = timestampToDate(user.updatedAt) ?? new Date();
+
+      const isNewUser =
+        Math.abs(createdAt.getTime() - updatedAt.getTime()) < 5000;
+
+      if (isNewUser) {
+        console.log("New user detected, redirecting to onboarding...");
+        router.push("/onboarding");
+      } else {
+        console.log("Existing user, redirecting to dashboard...");
+        router.push("/dashboard");
+      }
+
+      setIsLoading(false);
+    }
+  }, [user, router]);
 
   const handleGoogleSignIn = async () => {
     if (isLoading) return;
 
     setIsLoading(true);
     try {
+      console.log("Starting Google sign-in process...");
       await signInWithGoogle();
-      router.push("/dashboard");
     } catch (error) {
-      console.error("Error signing in with Google:", error);
-    } finally {
+      console.error("Error during sign-in process:", error);
+      alert("Sign in failed. Please try again later.");
       setIsLoading(false);
     }
   };
@@ -42,18 +60,15 @@ export default function LoginPage() {
             <Calendar className="h-8 w-8 text-rose-500 mr-2" />
             <span className="text-2xl font-bold">SyllabusSync</span>
           </div>
-          <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
           <CardDescription className="text-center">
             Sign in with your Google account
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
-            variant="outline"
-            size="lg"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="w-full gap-2"
+            className="w-full bg-rose-500 hover:bg-rose-600 gap-2"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
