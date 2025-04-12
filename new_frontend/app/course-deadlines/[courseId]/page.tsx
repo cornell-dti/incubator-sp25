@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { AuthGuard } from "@/components/AuthGuard";
 
 // Sample data - in a real app this would come from a database
 const coursesData = [
@@ -211,285 +212,295 @@ export default function CourseDeadlinesPage() {
   }
 
   return (
-    <DashboardShell>
-      <DashboardHeader heading={`${course.code} Deadlines`} text={course.name}>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Link>
-        </Button>
-      </DashboardHeader>
-
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Course Deadlines</h2>
-        <Button
-          onClick={() => setIsAddingNew(true)}
-          className="bg-rose-500 hover:bg-rose-600"
-          disabled={isAddingNew}
+    <AuthGuard>
+      <DashboardShell>
+        <DashboardHeader
+          heading={`${course.code} Deadlines`}
+          text={course.name}
         >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Deadline
-        </Button>
-      </div>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard">
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </Button>
+        </DashboardHeader>
 
-      {isAddingNew && (
-        <Card className="mb-6 border-2 border-rose-100">
-          <CardHeader>
-            <CardTitle>Add New Deadline</CardTitle>
-            <CardDescription>
-              Create a new deadline for this course
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Title</label>
-                  <Input
-                    placeholder="Assignment or exam name"
-                    value={newDeadline.title}
-                    onChange={(e) =>
-                      handleNewDeadlineChange("title", e.target.value)
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Type</label>
-                  <Select
-                    value={newDeadline.type}
-                    onValueChange={(value) =>
-                      handleNewDeadlineChange("type", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Assignment">Assignment</SelectItem>
-                      <SelectItem value="Exam">Exam</SelectItem>
-                      <SelectItem value="Quiz">Quiz</SelectItem>
-                      <SelectItem value="Paper">Paper</SelectItem>
-                      <SelectItem value="Project">Project</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Due Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newDeadline.dueDate ? (
-                        format(new Date(newDeadline.dueDate), "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={new Date(newDeadline.dueDate)}
-                      onSelect={(date) =>
-                        handleNewDeadlineChange(
-                          "dueDate",
-                          date.toISOString().split("T")[0]
-                        )
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Course Deadlines</h2>
+          <Button
+            onClick={() => setIsAddingNew(true)}
+            className="bg-rose-500 hover:bg-rose-600"
+            disabled={isAddingNew}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Deadline
+          </Button>
+        </div>
+
+        {isAddingNew && (
+          <Card className="mb-6 border-2 border-rose-100">
+            <CardHeader>
+              <CardTitle>Add New Deadline</CardTitle>
+              <CardDescription>
+                Create a new deadline for this course
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Title</label>
+                    <Input
+                      placeholder="Assignment or exam name"
+                      value={newDeadline.title}
+                      onChange={(e) =>
+                        handleNewDeadlineChange("title", e.target.value)
                       }
-                      initialFocus
                     />
-                  </PopoverContent>
-                </Popover>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Type</label>
+                    <Select
+                      value={newDeadline.type}
+                      onValueChange={(value) =>
+                        handleNewDeadlineChange("type", value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Assignment">Assignment</SelectItem>
+                        <SelectItem value="Exam">Exam</SelectItem>
+                        <SelectItem value="Quiz">Quiz</SelectItem>
+                        <SelectItem value="Paper">Paper</SelectItem>
+                        <SelectItem value="Project">Project</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Due Date</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {newDeadline.dueDate ? (
+                          format(new Date(newDeadline.dueDate), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={new Date(newDeadline.dueDate)}
+                        onSelect={(date) =>
+                          handleNewDeadlineChange(
+                            "dueDate",
+                            date.toISOString().split("T")[0]
+                          )
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddingNew(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAddDeadline}
+                    disabled={!newDeadline.title || !newDeadline.dueDate}
+                    className="bg-rose-500 hover:bg-rose-600"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Deadline
+                  </Button>
+                </div>
               </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsAddingNew(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddDeadline}
-                  disabled={!newDeadline.title || !newDeadline.dueDate}
-                  className="bg-rose-500 hover:bg-rose-600"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Deadline
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="space-y-4">
-        {deadlines.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center p-6">
-              <p className="text-muted-foreground mb-4">
-                No deadlines found for this course.
-              </p>
-              <Button
-                onClick={() => setIsAddingNew(true)}
-                className="bg-rose-500 hover:bg-rose-600"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Your First Deadline
-              </Button>
             </CardContent>
           </Card>
-        ) : (
-          deadlines.map((deadline) => (
-            <Card key={deadline.id} className="relative">
-              {editingDeadlineId === deadline.id ? (
-                <div className="p-6">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Title</label>
-                      <Input
-                        value={editedValues.title}
-                        onChange={(e) =>
-                          handleInputChange("title", e.target.value)
-                        }
-                        placeholder="Assignment or exam name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Type</label>
-                      <Select
-                        value={editedValues.type}
-                        onValueChange={(value) =>
-                          handleInputChange("type", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Assignment">Assignment</SelectItem>
-                          <SelectItem value="Exam">Exam</SelectItem>
-                          <SelectItem value="Quiz">Quiz</SelectItem>
-                          <SelectItem value="Paper">Paper</SelectItem>
-                          <SelectItem value="Project">Project</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2 mb-4">
-                    <label className="text-sm font-medium">Due Date</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {editedValues.dueDate ? (
-                            format(new Date(editedValues.dueDate), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={new Date(editedValues.dueDate)}
-                          onSelect={(date) =>
-                            handleInputChange(
-                              "dueDate",
-                              date.toISOString().split("T")[0]
-                            )
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={handleCancelEdit}>
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleSaveEdit}
-                      className="bg-rose-500 hover:bg-rose-600"
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="absolute right-4 top-4 flex space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditClick(deadline)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteDeadline(deadline.id)}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </div>
+        )}
+
+        <div className="space-y-4">
+          {deadlines.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center p-6">
+                <p className="text-muted-foreground mb-4">
+                  No deadlines found for this course.
+                </p>
+                <Button
+                  onClick={() => setIsAddingNew(true)}
+                  className="bg-rose-500 hover:bg-rose-600"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Your First Deadline
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            deadlines.map((deadline) => (
+              <Card key={deadline.id} className="relative">
+                {editingDeadlineId === deadline.id ? (
                   <div className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`rounded-full p-3 ${
-                          deadline.type === "Exam"
-                            ? "bg-rose-100"
-                            : "bg-blue-100"
-                        }`}
-                      >
-                        {deadline.type === "Exam" ? (
-                          <FileText
-                            className={`h-5 w-5 ${
-                              deadline.type === "Exam"
-                                ? "text-rose-500"
-                                : "text-blue-500"
-                            }`}
-                          />
-                        ) : (
-                          <Clock
-                            className={`h-5 w-5 ${
-                              deadline.type === "Exam"
-                                ? "text-rose-500"
-                                : "text-blue-500"
-                            }`}
-                          />
-                        )}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Title</label>
+                        <Input
+                          value={editedValues.title}
+                          onChange={(e) =>
+                            handleInputChange("title", e.target.value)
+                          }
+                          placeholder="Assignment or exam name"
+                        />
                       </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          {deadline.title}
-                        </h3>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <span className="font-medium mr-2">
-                            {deadline.type}
-                          </span>
-                          <span>
-                            Due on {format(new Date(deadline.dueDate), "PPP")}
-                          </span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Type</label>
+                        <Select
+                          value={editedValues.type}
+                          onValueChange={(value) =>
+                            handleInputChange("type", value)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Assignment">
+                              Assignment
+                            </SelectItem>
+                            <SelectItem value="Exam">Exam</SelectItem>
+                            <SelectItem value="Quiz">Quiz</SelectItem>
+                            <SelectItem value="Paper">Paper</SelectItem>
+                            <SelectItem value="Project">Project</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2 mb-4">
+                      <label className="text-sm font-medium">Due Date</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {editedValues.dueDate ? (
+                              format(new Date(editedValues.dueDate), "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={new Date(editedValues.dueDate)}
+                            onSelect={(date) =>
+                              handleInputChange(
+                                "dueDate",
+                                date.toISOString().split("T")[0]
+                              )
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={handleCancelEdit}>
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleSaveEdit}
+                        className="bg-rose-500 hover:bg-rose-600"
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="absolute right-4 top-4 flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(deadline)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteDeadline(deadline.id)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`rounded-full p-3 ${
+                            deadline.type === "Exam"
+                              ? "bg-rose-100"
+                              : "bg-blue-100"
+                          }`}
+                        >
+                          {deadline.type === "Exam" ? (
+                            <FileText
+                              className={`h-5 w-5 ${
+                                deadline.type === "Exam"
+                                  ? "text-rose-500"
+                                  : "text-blue-500"
+                              }`}
+                            />
+                          ) : (
+                            <Clock
+                              className={`h-5 w-5 ${
+                                deadline.type === "Exam"
+                                  ? "text-rose-500"
+                                  : "text-blue-500"
+                              }`}
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">
+                            {deadline.title}
+                          </h3>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <span className="font-medium mr-2">
+                              {deadline.type}
+                            </span>
+                            <span>
+                              Due on {format(new Date(deadline.dueDate), "PPP")}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </>
-              )}
-            </Card>
-          ))
-        )}
-      </div>
-    </DashboardShell>
+                  </>
+                )}
+              </Card>
+            ))
+          )}
+        </div>
+      </DashboardShell>
+    </AuthGuard>
   );
 }
