@@ -247,7 +247,7 @@ const cornellInstructors = [
   { id: 6, name: "Dr. Garcia", department: "Chemistry" },
   { id: 7, name: "Dr. Kim", department: "Economics" },
   { id: 8, name: "Dr. Brown", department: "Biology" },
-  { id: 9, name: "Dr. Davis", department: "History" },
+  { id: 9, name: "Dr. Davis", departmeent: "History" },
   { id: 10, name: "Dr. Wilson", department: "Psychology" },
 ];
 

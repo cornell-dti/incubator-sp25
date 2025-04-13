@@ -44,11 +44,12 @@ export const pdfToText = async (filePath: string): Promise<string> => {
  */
 export const parseSyllabus = async (
   syllabusText: string,
-  courseCode: string,
-  instructor: string,
+  // courseCode: string,
+  // instructor: string,
   termDates: string
 ) => {
   try {
+    console.log("Starting to parse syllabus");
     const messages: Message[] = [
       {
         role: "system",
@@ -59,26 +60,28 @@ export const parseSyllabus = async (
           JSON format:\n \
           \
           {\
+          courseCode: CS 2110,\
+          instructor: Matthew Eichorn, Curran Muhlberger,\
           todos[]: [\
             {\
-              title: Complete Shakespeare Romeo & Juliet Ch 1\
-              date: 2025-01-01T00:00:00Z\
-              eventType: assignment\
-              priority: 3\
+              title: Complete Shakespeare Romeo & Juliet Ch 1,\
+              date: 2025-01-01T00:00:00Z,\
+              eventType: assignment,\
+              priority: 3,\
             },\
             {\
-              title: Study Ch 1\
-              date: 2025-01-31T00:00:00Z\
-              eventType: exams\
-              priority: 1\
+              title: Study Ch 1,\
+              date: 2025-01-31T00:00:00Z,\
+              eventType: exams,\
+              priority: 1,\
             },\
             {\
-              title: Complete final project\
-              date: 2025-05-01T00:00:00Z\
-              eventType: projects\
-              priority: 2\
+              title: Complete final project,\
+              date: 2025-05-01T00:00:00Z,\
+              eventType: projects,\
+              priority: 2,\
             }\
-          ]\
+          ],\
           gradingPolicy: {exams: 60, assignments: 15, projects: 20, participation: 5}\
           }\n\
           \
@@ -98,12 +101,7 @@ export const parseSyllabus = async (
       },
       {
         role: "user",
-        content: `Please parse the attached syllabus for the class: ${courseCode} with \
-            instructor(s) ${instructor}. Also check to see if this information is \
-            consistent with the syllabus I have uploaded. If I have uploaded a syllabus \
-            that is inconsistent with the course and/or the instructor, please let me know \
-            by saying, "You have provided the wrong syllabus for ${courseCode} with \
-            instructor(s) ${instructor}.`,
+        content: `Please parse the attached syllabus.`,
       },
       {
         role: "user",
@@ -112,9 +110,9 @@ export const parseSyllabus = async (
     ];
 
     const response = await axios.post(
-      "http://localhost:11434/api/chat", // may consider using google gemini or another model, current output not super complete
+      "http://127.0.0.1:11434/api/chat",
       {
-        model: "deepseek-v3",
+        model: "deepseek-r1:7b",
         messages: messages,
         stream: false,
       },
@@ -124,7 +122,7 @@ export const parseSyllabus = async (
         },
       }
     );
-
+    console.log("Completed syllabus parsing");
     return response.data;
   } catch (error) {
     console.error("Error parsing syllabus:", error);

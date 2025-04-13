@@ -66,26 +66,7 @@ export default function DashboardPage() {
     },
   ];
 
-  const [courses, setCourses] = useState([
-    {
-      id: 1,
-      code: "CS 4700",
-      name: "Foundations of Artificial Intelligence",
-      instructor: "Dr. Smith",
-    },
-    {
-      id: 2,
-      code: "MATH 2940",
-      name: "Linear Algebra",
-      instructor: "Dr. Johnson",
-    },
-    {
-      id: 3,
-      code: "ENGL 1100",
-      name: "Writing in the Disciplines",
-      instructor: "Dr. Williams",
-    },
-  ]);
+  const [courses, setCourses] = useState([]);
 
   const handleEditClick = (course) => {
     setEditingCourseId(course.id);
