@@ -113,6 +113,11 @@ export default function DashboardPage() {
     router.push(`/course-deadlines/${courseId}`);
   };
 
+  // Function to handle redirect to onboarding page
+  const navigateToOnboarding = () => {
+    router.push("/onboarding");
+  };
+
   return (
     <AuthGuard>
       <DashboardShell>
@@ -121,7 +126,10 @@ export default function DashboardPage() {
           text="Manage your courses and upcoming deadlines."
         >
           <div className="flex gap-2">
-            <Button className="bg-rose-500 hover:bg-rose-600">
+            <Button
+              className="bg-rose-500 hover:bg-rose-600"
+              onClick={navigateToOnboarding}
+            >
               <Upload className="mr-2 h-4 w-4" />
               Upload Syllabus
             </Button>
@@ -246,7 +254,7 @@ export default function DashboardPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <SyllabusUploader />
+                  <SyllabusUploader onUploaded={() => navigateToOnboarding()} />
                 </CardContent>
               </Card>
             </div>
