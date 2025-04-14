@@ -120,6 +120,8 @@ export default function SyllabusReviewPage() {
   const [totalSyllabi, setTotalSyllabi] = useState(sampleSyllabi.length);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Course[]>([]);
+  const [instructorQuery, setInstructorQuery] = useState("");
+  const [instructorResults, setInstructorResults] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   // Add this state for the instructor dropdown
@@ -157,6 +159,37 @@ export default function SyllabusReviewPage() {
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  useEffect(() => {
+    const searchInstructors = async () => {
+      if (searchInstructors.length < 2) {
+        setInstructorResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/api/search/instructor/${courseData.courseCode}/${searchInstructors}`
+        );
+        console.log(response.data);
+        const courses = response.data.instructors || [];
+        setInstructorResults(courses);
+      } catch (error) {
+        console.error("Error searching instructors:", error);
+        setInstructorResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    // Debounce the search to avoid making too many requests
+    const timeoutId = setTimeout(() => {
+      searchInstructors();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [instructorQuery]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -395,7 +428,11 @@ export default function SyllabusReviewPage() {
                         </PopoverTrigger>
                         <PopoverContent className="w-full p-0">
                           <Command>
-                            <CommandInput placeholder="Search instructors..." />
+                            <CommandInput
+                              placeholder="Search instructors..."
+                              value={instructorQuery}
+                              onValueChange={setInstructorQuery}
+                            />
                             <CommandList>
                               <CommandEmpty>No instructor found.</CommandEmpty>
                               <CommandGroup className="max-h-60 overflow-y-auto">

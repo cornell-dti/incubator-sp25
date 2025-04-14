@@ -86,7 +86,11 @@ export const searchController: SearchRequestHandlers = {
   getInstructorSearch: async (req, res) => {
     try {
       const query = req.params.query;
-      const courseRef = await db.collection("courses").get();
+      const courseCode = req.params.courseCode;
+      const courseRef = await db
+        .collection("courses")
+        .where("courseCode", "==", courseCode)
+        .get();
 
       let allInstructors: string[] = [];
       courseRef.forEach((doc) => {
