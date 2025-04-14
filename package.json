@@ -1,0 +1,25 @@
+{
+  "name": "incubator-sp25",
+  "scripts": {
+    "frontend": "cd frontend && npm run dev",
+    "backend": "cd backend && npm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.13.5",
+    "@types/pdf-parse": "^1.1.4",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.9",
+    "prettier": "3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.17"
+  }
+}
