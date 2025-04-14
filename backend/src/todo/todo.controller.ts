@@ -29,14 +29,19 @@ export const todoController: TodoRequestHandlers = {
         !todoData.title ||
         !todoData.date ||
         !todoData.eventType ||
-        // !todoData.priority ||
-        !todoData.courseId ||
-        !todoData.userId
+        !todoData.courseCode
       ) {
         return res.status(400).json({
           error: "Missing required fields. All todo properties are required.",
         });
       }
+
+      const userId = req.user?.uid;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      todoData.userId = userId;
 
       const docRef = await db.collection("todos").add(todoData);
 
@@ -63,7 +68,7 @@ export const todoController: TodoRequestHandlers = {
         return res.status(404).json({ message: "Todo not found" });
       }
 
-      if (docData.userId !== res.locals.userId) {
+      if (docData.userId !== req.user?.uid) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -91,7 +96,7 @@ export const todoController: TodoRequestHandlers = {
         return res.status(404).json({ message: "Todo not found" });
       }
 
-      if (docData.userId !== res.locals.userId) {
+      if (docData.userId !== req.user?.uid) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -101,6 +106,30 @@ export const todoController: TodoRequestHandlers = {
     } catch (error) {
       console.error("Error deleting todo:", error);
       return res.status(500).json({ message: "Failed to delete todo", error });
+    }
+  },
+  getTodoByUserId: async (req, res) => {
+    try {
+      const userId = req.user?.uid;
+
+      const snapshot = await db
+        .collection("todos")
+        .where("userId", "==", userId)
+        .get();
+
+      const todos: Todo[] = [];
+
+      snapshot.forEach((doc) => {
+        todos.push({
+          id: doc.id,
+          ...(doc.data() as Todo),
+        });
+      });
+
+      res.status(200).json(todos);
+    } catch (error) {
+      console.error("Error getting todos by user ID:", error);
+      res.status(500).json({ error: "Failed to retrieve todos" });
     }
   },
 };

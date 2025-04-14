@@ -54,7 +54,7 @@ export interface Syllabus {
 export interface Todo {
   id?: string;
   userId: string;
-  courseId: string;
+  courseCode: string;
   title: string;
   date: FirestoreTimestamp;
   eventType: string;

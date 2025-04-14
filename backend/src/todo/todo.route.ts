@@ -8,5 +8,6 @@ router.get("/", todoController.getAllTodos);
 router.post("/", authMiddleware, todoController.createTodo);
 router.put("/:id", authMiddleware, todoController.updateTodo);
 router.delete("/:id", authMiddleware, todoController.deleteTodo);
+router.get("/user", authMiddleware, todoController.getTodoByUserId);
 
 export default router;
