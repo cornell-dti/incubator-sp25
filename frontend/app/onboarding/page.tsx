@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Calendar, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,24 +28,73 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (files.length === 0) return;
 
     setUploading(true);
     setProgress(0);
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setUploading(false);
-          router.push("/onboarding/review/1"); // Navigate to first syllabus review
-          return 100;
-        }
-        return prev + 5;
-      });
-    }, 200);
+    try {
+      const parsedSyllabi = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileProgress = Math.round((i / files.length) * 100);
+        setProgress(fileProgress);
+
+        // Create FormData for specific file
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // Send file to parsing endpoint
+        const response = await axios.post(
+          "http://localhost:3000/api/syllabi/parsed",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / (progressEvent.total || 0)
+              );
+              // Adjust progress to reflect both file index and upload progress
+              const adjustedProgress = Math.round(
+                (i / files.length) * 100 + percentCompleted / files.length
+              );
+              setProgress(Math.min(adjustedProgress, 99));
+            },
+          }
+        );
+
+        // Get the parsed data
+        const parsedData = await response.data;
+        parsedSyllabi.push({
+          id: i + 1,
+          parsedContent: parsedData.text,
+          extractedData: parsedData.syllabus || {
+            courseCode: parsedData.courseCode || "",
+            courseName: parsedData.courseName || "",
+            instructor: parsedData.instructor || "",
+            deadlines: parsedData.deadlines || [],
+          },
+        });
+      }
+
+      // Store parsed syllabi in localStorage for the review page
+      localStorage.setItem("parsedSyllabi", JSON.stringify(parsedSyllabi));
+
+      setProgress(100);
+
+      // Navigate to the first syllabus review page
+      setTimeout(() => {
+        setUploading(false);
+        router.push("/onboarding/review/1");
+      }, 500);
+    } catch (error) {
+      console.error("Error processing files:", error);
+      setUploading(false);
+    }
   };
 
   return (

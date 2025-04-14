@@ -3,6 +3,9 @@ import { db, storage } from "../config/firebase";
 import { Syllabus, Course } from "../types";
 import { SyllabusRequestHandlers } from "../types/requests";
 import { parseSyllabus, pdfToText } from "./syllabus.parser";
+import fs from "fs";
+import path from "path";
+import multer from "multer";
 
 export const syllabusController: SyllabusRequestHandlers = {
   /**
@@ -252,19 +255,72 @@ export const syllabusController: SyllabusRequestHandlers = {
    * @returns parsed text in JSON format, error message otherwise
    */
   getParsedText: async (req: Request, res: Response) => {
-    try {
-      const text = await pdfToText("src/syllabus/syllabus.pdf");
-      const courseCode = req.params.courseCode;
-      const instructor = req.params.instructor;
-      const output = await parseSyllabus(text, courseCode, instructor, "");
-      return res.status(200).json({
-        syllabus: output,
-      });
-    } catch (error) {
-      console.log("error");
-      return res
-        .status(500)
-        .json({ message: "Failed to parse syllabus", error });
-    }
+    const storage = multer.diskStorage({
+      destination: function (req, file, cb) {
+        const uploadDir = path.join(process.cwd(), "uploads");
+
+        // Create the directory if it doesn't exist
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        cb(null, uploadDir);
+      },
+      filename: function (req, file, cb) {
+        // Create a unique filename
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        cb(
+          null,
+          file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+        );
+      },
+    });
+
+    // Initialize multer upload
+    const upload = multer({ storage: storage });
+
+    upload.single("file")(req, res, async function (err) {
+      if (err) {
+        return res.status(400).json({
+          message: "File upload error",
+          error: err.message,
+        });
+      }
+      try {
+        // req.file is populated by multer after successful upload
+        if (!req.file) {
+          return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const filePath = req.file.path;
+        const text = await pdfToText(filePath);
+
+        const termDates =
+          "January 21 (Tuesday) – Instruction Begins\n\
+           February 15 (Saturday) – February Break Begins\n\
+           February 19 (Wednesday) – Instruction Resumes\n\
+           March 29 (Saturday) – Spring Break Begins\n\
+           April 7 (Monday) – Instruction Resumes\n\
+           May 6 (Tuesday) – Last Day of Instruction\n\
+           May 7 (Wednesday) – Study Days Begin\n\
+           May 9 (Friday) – Study Days End\n\
+           May 10 (Saturday) – Scheduled Exams Begin\n\
+           May 17 (Saturday) – Scheduled Exams End\n\
+           May 23–25 (Friday–Sunday) – University Commencement Weekend";
+        const output = await parseSyllabus(text, termDates);
+
+        fs.unlinkSync(filePath);
+
+        return res.status(200).json({
+          text: text,
+          syllabus: output,
+        });
+      } catch (error) {
+        console.log("error");
+        return res
+          .status(500)
+          .json({ message: "Failed to parse syllabus", error });
+      }
+    });
   },
 };

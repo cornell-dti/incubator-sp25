@@ -56,3 +56,8 @@ export interface TodoRequestHandlers {
   deleteTodo: RequestHandler<{ id: string }>;
   getTodoByUserId: RequestHandler;
 }
+
+export interface SearchRequestHandlers {
+  getCourseSearch: RequestHandler<{ query: string }>;
+  getInstructorSearch: RequestHandler<{ query: string; courseCode: string }>;
+}

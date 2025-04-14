@@ -1,4 +1,6 @@
 import axios from "axios";
+import { db } from "../../config/firebase";
+import { Subject } from "../../types";
 
 // Interface representing a subject from the API
 export interface ApiSubject {
@@ -38,6 +40,36 @@ export class SubjectService {
     } catch (error) {
       console.error(`Error fetching subjects for ${semester}:`, error);
       return null;
+    }
+  }
+
+  async saveSubjects(semester: string): Promise<Boolean> {
+    try {
+      const subjects = await this.fetchSubjects(semester);
+      if (!subjects || subjects === null) {
+        console.log(`Unable to find subjects for ${semester}`);
+        return false;
+      }
+      for (const subject of subjects) {
+        const subRef = await db
+          .collection("subjects")
+          .where("subjectCode", "==", subject.value)
+          .limit(1)
+          .get();
+
+        if (subRef.empty) {
+          const newSubject: Subject = {
+            subjectCode: subject.value,
+            subjectName: subject.descrformal,
+          };
+          await db.collection("subjects").add(newSubject);
+        }
+      }
+      console.log(`Completed saving subjects for ${semester}`);
+      return true;
+    } catch (error) {
+      console.error(`Error saving subjects for ${semester}:`, error);
+      return false;
     }
   }
 }

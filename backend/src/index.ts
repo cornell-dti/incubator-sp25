@@ -4,6 +4,7 @@ import userRoutes from "./user/user.route";
 import syllabusRoutes from "./syllabus/syllabus.route";
 import courseRoutes from "./course/course.route";
 import authRoutes from "./auth/auth.route";
+import searchRoutes from "./search/search.route";
 import todoRoutes from "./todo/todo.route";
 import examRoutes from "./exam/exam.route";
 import cors from "cors";
@@ -34,6 +35,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/syllabi", syllabusRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/search", searchRoutes);
 app.use("/api/todos", todoRoutes);
 app.use("/api/exams", examRoutes);
 
