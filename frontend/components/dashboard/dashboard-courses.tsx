@@ -1,4 +1,3 @@
-// File: /components/dashboard/dashboard-courses.tsx
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Course } from "@/@types/models";
@@ -19,7 +18,6 @@ export function DashboardCourses({
   const router = useRouter();
 
   const handleEditSave = () => {
-    // In a real implementation, this would save the edits to the backend
     setEditingCourseId(null);
     onCourseUpdate();
   };
