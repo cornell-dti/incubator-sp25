@@ -3,10 +3,19 @@ import { User, Course, Todo, Exam } from "@/@types/models";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+/**
+ * Creates an API service with methods to interact with the backend
+ * This service handles authenticated requests using tokens from AuthContext
+ * @returns An object containing methods for various API operations
+ */
 export const createApiService = () => {
   const { getAuthToken } = useAuth();
 
-  // For authenticated requests
+  /**
+   * Generates headers with authentication token for secure API requests. Use it for protected routes.
+   * @returns {Promise<Record<string, string>>} Headers object with Content-Type and Authorization
+   * @throws {Error} If no authenticated user is found
+   */
   const getAuthHeaders = async () => {
     const token = await getAuthToken();
     if (!token) {
