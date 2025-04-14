@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { User, Course, Syllabus, Exam, Todo, FinalDeliverable } from "./models";
+import { AuthRequest } from "../middleware/authenticate";
 
 export interface RequestHandler<P = {}, B = {}, Q = {}> {
   (
-    req: Request<P, any, B, Q>,
+    req: AuthRequest & Request<P, any, B, Q>,
     res: Response,
     next?: NextFunction
   ): Promise<any> | any;
@@ -38,6 +39,7 @@ export interface ExamRequestHandlers {
   createExam: RequestHandler<{}, Exam>;
   updateExam: RequestHandler<{ id: string }, Partial<Exam>>;
   deleteExam: RequestHandler<{ id: string }>;
+  getExamsByCourseId: RequestHandler<{ courseId: string }>;
 }
 
 export interface FinalDeliverableRequestHandlers {
@@ -52,6 +54,7 @@ export interface TodoRequestHandlers {
   createTodo: RequestHandler<{}, Todo>;
   updateTodo: RequestHandler<{ id: string }, Partial<Todo>>;
   deleteTodo: RequestHandler<{ id: string }>;
+  getTodoByUserId: RequestHandler;
 }
 
 export interface SearchRequestHandlers {
