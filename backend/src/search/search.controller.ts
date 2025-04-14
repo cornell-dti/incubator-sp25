@@ -18,11 +18,11 @@ export const searchController: SearchRequestHandlers = {
           .get();
 
         if (!subjectsRef.empty) {
-          const subject = subjectsRef.docs[0].data().subjectCode;
+          // const subject = subjectsRef.docs[0].data().subjectCode;
           const subjectCourseList = await db
             .collection("courses")
-            .where("courseCode", ">=", subject)
-            .where("courseCode", "<=", subject + "\uf8ff")
+            .where("courseCode", ">=", query)
+            .where("courseCode", "<=", query + "\uf8ff")
             .limit(5)
             .get();
 
