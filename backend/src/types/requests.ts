@@ -16,7 +16,7 @@ export interface UserRequestHandlers {
   createUser: RequestHandler<{}, User>;
   updateUser: RequestHandler<{ id: string }, Partial<User>>;
   deleteUser: RequestHandler<{ id: string }>;
-  addCourse: RequestHandler<{ courseId: string }>;
+  addCourse: RequestHandler;
 }
 
 export interface CourseRequestHandlers {

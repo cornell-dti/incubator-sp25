@@ -126,7 +126,7 @@ export const userController: UserRequestHandlers = {
   },
   addCourse: async (req, res) => {
     try {
-      const { courseId } = req.body;
+      const courseCode = req.params.courseCode;
       const userId = req.user?.uid;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -139,11 +139,23 @@ export const userController: UserRequestHandlers = {
 
       const userData = userDoc.data() as User;
       const courses: Course[] = userData.courses || [];
-      const courseRef = db.collection("courses").doc(courseId);
-      const courseDoc = await courseRef.get();
-      if (!courseDoc.exists) {
+
+      // Check if courseCode is provided
+      if (!courseCode) {
+        return res.status(400).json({ error: "Course code is required" });
+      }
+
+      const courseQuerySnapshot = await db
+        .collection("courses")
+        .where("courseCode", "==", courseCode)
+        .limit(1)
+        .get();
+
+      if (courseQuerySnapshot.empty) {
         return res.status(404).json({ error: "Course not found" });
       }
+
+      const courseDoc = courseQuerySnapshot.docs[0];
       const courseData = courseDoc.data() as Course;
       const course: Course = {
         id: courseDoc.id,
