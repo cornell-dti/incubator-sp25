@@ -16,6 +16,7 @@ export interface UserRequestHandlers {
   createUser: RequestHandler<{}, User>;
   updateUser: RequestHandler<{ id: string }, Partial<User>>;
   deleteUser: RequestHandler<{ id: string }>;
+  addCourse: RequestHandler<{ courseId: string }>;
 }
 
 export interface CourseRequestHandlers {
@@ -55,9 +56,4 @@ export interface TodoRequestHandlers {
   updateTodo: RequestHandler<{ id: string }, Partial<Todo>>;
   deleteTodo: RequestHandler<{ id: string }>;
   getTodoByUserId: RequestHandler;
-}
-
-export interface SearchRequestHandlers {
-  getCourseSearch: RequestHandler<{ query: string }>;
-  getInstructorSearch: RequestHandler<{ query: string; courseCode: string }>;
 }
