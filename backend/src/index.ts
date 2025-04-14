@@ -4,6 +4,7 @@ import userRoutes from "./user/user.route";
 import syllabusRoutes from "./syllabus/syllabus.route";
 import courseRoutes from "./course/course.route";
 import authRoutes from "./auth/auth.route";
+import searchRoutes from "./search/search.route";
 import cors from "cors";
 
 dotenv.config();
@@ -32,6 +33,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/syllabi", syllabusRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/search", searchRoutes);
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);

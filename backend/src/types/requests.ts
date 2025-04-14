@@ -53,3 +53,7 @@ export interface TodoRequestHandlers {
   updateTodo: RequestHandler<{ id: string }, Partial<Todo>>;
   deleteTodo: RequestHandler<{ id: string }>;
 }
+
+export interface SearchRequestHandlers {
+  getCourseSearch: RequestHandler<{ query: string }>;
+}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import axios from "axios";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,6 +13,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { Course } from "@/@types";
 
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -41,7 +43,11 @@ import {
 import { format } from "date-fns";
 import { AuthGuard } from "@/components/AuthGuard";
 
-// Sample data - in a real app this would come from an API
+interface Section {
+  sectionId: string;
+  instructor: string;
+}
+
 const sampleSyllabi = [
   {
     id: 1,
@@ -95,160 +101,6 @@ const sampleSyllabi = [
       ],
     },
   },
-  {
-    id: 2,
-    fileName: "MATH2940_Syllabus.pdf",
-    content: `
-      MATH 2940: Linear Algebra
-      
-      Instructor: Dr. Johnson
-      Email: johnson@cornell.edu
-      Office Hours: Wednesday 1-3pm, Malott Hall 222
-      
-      Course Description:
-      Introduction to linear algebra, including vector spaces, linear transformations, eigenvalues, and applications.
-      
-      Grading:
-      - Problem Sets: 30%
-      - Midterm 1: 20%
-      - Midterm 2: 20%
-      - Final Exam: 30%
-      
-      Important Dates:
-      - Problem Set 1: September 10
-      - Problem Set 2: September 25
-      - Midterm 1: October 10
-      - Problem Set 3: October 30
-      - Midterm 2: November 15
-      - Final Exam: December 20
-    `,
-    extractedData: {
-      courseCode: "MATH 2940",
-      courseName: "Linear Algebra",
-      instructor: "Dr. Johnson",
-      deadlines: [
-        {
-          id: 1,
-          title: "Problem Set 1",
-          dueDate: "2023-09-10",
-          type: "Assignment",
-        },
-        {
-          id: 2,
-          title: "Problem Set 2",
-          dueDate: "2023-09-25",
-          type: "Assignment",
-        },
-        { id: 3, title: "Midterm 1", dueDate: "2023-10-10", type: "Exam" },
-        {
-          id: 4,
-          title: "Problem Set 3",
-          dueDate: "2023-10-30",
-          type: "Assignment",
-        },
-        { id: 5, title: "Midterm 2", dueDate: "2023-11-15", type: "Exam" },
-        { id: 6, title: "Final Exam", dueDate: "2023-12-20", type: "Exam" },
-      ],
-    },
-  },
-  {
-    id: 3,
-    fileName: "ENGL1100_Syllabus.pdf",
-    content: `
-      ENGL 1100: Writing in the Disciplines
-      
-      Instructor: Dr. Williams
-      Email: williams@cornell.edu
-      Office Hours: Thursday 10am-12pm, Goldwin Smith Hall 123
-      
-      Course Description:
-      This course focuses on developing writing skills for academic and professional contexts across various disciplines.
-      
-      Grading:
-      - Essays: 60%
-      - Presentations: 20%
-      - Participation: 20%
-      
-      Important Dates:
-      - Essay 1 Draft: September 22
-      - Essay 1 Final: October 6
-      - Presentation 1: October 27
-      - Essay 2 Draft: November 10
-      - Essay 2 Final: November 30
-      - Final Presentation: December 8
-    `,
-    extractedData: {
-      courseCode: "ENGL 1100",
-      courseName: "Writing in the Disciplines",
-      instructor: "Dr. Williams",
-      deadlines: [
-        {
-          id: 1,
-          title: "Essay 1 Draft",
-          dueDate: "2023-09-22",
-          type: "Assignment",
-        },
-        {
-          id: 2,
-          title: "Essay 1 Final",
-          dueDate: "2023-10-06",
-          type: "Assignment",
-        },
-        {
-          id: 3,
-          title: "Presentation 1",
-          dueDate: "2023-10-27",
-          type: "Presentation",
-        },
-        {
-          id: 4,
-          title: "Essay 2 Draft",
-          dueDate: "2023-11-10",
-          type: "Assignment",
-        },
-        {
-          id: 5,
-          title: "Essay 2 Final",
-          dueDate: "2023-11-30",
-          type: "Assignment",
-        },
-        {
-          id: 6,
-          title: "Final Presentation",
-          dueDate: "2023-12-08",
-          type: "Presentation",
-        },
-      ],
-    },
-  },
-];
-
-// Sample Cornell course list for autocomplete
-const cornellCourses = [
-  { code: "CS 4700", name: "Foundations of Artificial Intelligence" },
-  { code: "CS 4780", name: "Machine Learning for Intelligent Systems" },
-  { code: "CS 3110", name: "Data Structures and Functional Programming" },
-  { code: "MATH 2940", name: "Linear Algebra" },
-  { code: "MATH 3110", name: "Introduction to Analysis" },
-  { code: "ENGL 1100", name: "Writing in the Disciplines" },
-  { code: "ENGL 2880", name: "Expository Writing" },
-  { code: "PHYS 2213", name: "Physics II: Electromagnetism" },
-  { code: "CHEM 2070", name: "General Chemistry I" },
-  { code: "ECON 1110", name: "Introductory Microeconomics" },
-];
-
-// Add this sample instructor list after the cornellCourses array
-const cornellInstructors = [
-  { id: 1, name: "Dr. Smith", department: "Computer Science" },
-  { id: 2, name: "Dr. Johnson", department: "Mathematics" },
-  { id: 3, name: "Dr. Williams", department: "English" },
-  { id: 4, name: "Dr. Chen", department: "Computer Science" },
-  { id: 5, name: "Dr. Patel", department: "Physics" },
-  { id: 6, name: "Dr. Garcia", department: "Chemistry" },
-  { id: 7, name: "Dr. Kim", department: "Economics" },
-  { id: 8, name: "Dr. Brown", department: "Biology" },
-  { id: 9, name: "Dr. Davis", departmeent: "History" },
-  { id: 10, name: "Dr. Wilson", department: "Psychology" },
 ];
 
 export default function SyllabusReviewPage() {
@@ -266,9 +118,78 @@ export default function SyllabusReviewPage() {
   const [editingDeadlineId, setEditingDeadlineId] = useState(null);
   const [open, setOpen] = useState(false);
   const [totalSyllabi, setTotalSyllabi] = useState(sampleSyllabi.length);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Course[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Add this state for the instructor dropdown
   const [instructorOpen, setInstructorOpen] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [instructors, setInstructors] = useState<string[]>([]);
+
+  useEffect(() => {
+    const searchCourses = async () => {
+      if (searchQuery.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/api/search/${searchQuery}`
+        );
+        console.log(response.data);
+        const courses = response.data.courses || [];
+        setSearchResults(courses);
+      } catch (error) {
+        console.error("Error searching courses:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    // Debounce the search to avoid making too many requests
+    const timeoutId = setTimeout(() => {
+      searchCourses();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/courses");
+        const mappedCourses = response.data;
+        setCourses(mappedCourses);
+        setInstructorOpen(true);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    const fetchInstructors = async () => {
+      if (!courseData.courseCode) return;
+      try {
+        const course = await axios.get(
+          `http://localhost:3000/api/courses/${courseData.courseCode}`
+        );
+        const instructorList = course.data.sections.map((section: Section) => {
+          return section.instructor;
+        });
+        setInstructors(instructorList);
+      } catch (error) {
+        console.error("Error fetching instructors:", error);
+      }
+    };
+    fetchInstructors();
+  }, [courseData.courseCode]);
 
   useEffect(() => {
     // In a real app, this would be an API call
@@ -284,13 +205,15 @@ export default function SyllabusReviewPage() {
     }
   }, [syllabusId]);
 
-  const handleCourseSelect = (selectedCourse) => {
+  const handleCourseSelect = (selectedCourse: Course) => {
     setCourseData({
       ...courseData,
-      courseCode: selectedCourse.code,
-      courseName: selectedCourse.name,
+      courseCode: selectedCourse.courseCode,
+      courseName: selectedCourse.courseName,
     });
     setOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
   };
 
   const handleInputChange = (field, value) => {
@@ -397,27 +320,43 @@ export default function SyllabusReviewPage() {
                         </PopoverTrigger>
                         <PopoverContent className="w-full p-0">
                           <Command>
-                            <CommandInput placeholder="Search Cornell courses..." />
+                            <CommandInput
+                              placeholder="Search Cornell courses..."
+                              value={searchQuery}
+                              onValueChange={setSearchQuery}
+                            />
                             <CommandList>
-                              <CommandEmpty>No course found.</CommandEmpty>
-                              <CommandGroup className="max-h-60 overflow-y-auto">
-                                {cornellCourses.map((course) => (
-                                  <CommandItem
-                                    key={course.code}
-                                    value={course.code}
-                                    onSelect={() => handleCourseSelect(course)}
-                                  >
-                                    <Check
-                                      className={`mr-2 h-4 w-4 ${
-                                        courseData.courseCode === course.code
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      }`}
-                                    />
-                                    {course.code} - {course.name}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
+                              {isSearching ? (
+                                <CommandItem disabled>Searching...</CommandItem>
+                              ) : searchQuery.length < 2 ? (
+                                <CommandItem disabled>
+                                  Type at least 2 characters to search
+                                </CommandItem>
+                              ) : searchResults.length === 0 ? (
+                                <CommandEmpty>No courses found</CommandEmpty>
+                              ) : (
+                                <CommandGroup className="max-h-60 overflow-y-auto">
+                                  {searchResults.map((course) => (
+                                    <CommandItem
+                                      key={course.id}
+                                      value={course.courseCode}
+                                      onSelect={() =>
+                                        handleCourseSelect(course)
+                                      }
+                                    >
+                                      <Check
+                                        className={`mr-2 h-4 w-4 ${
+                                          courseData.courseCode ===
+                                          course.courseCode
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        }`}
+                                      />
+                                      {course.courseCode} - {course.courseName}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
                             </CommandList>
                           </Command>
                         </PopoverContent>
@@ -460,27 +399,26 @@ export default function SyllabusReviewPage() {
                             <CommandList>
                               <CommandEmpty>No instructor found.</CommandEmpty>
                               <CommandGroup className="max-h-60 overflow-y-auto">
-                                {cornellInstructors.map((instructor) => (
+                                {instructors.map((instructor) => (
                                   <CommandItem
-                                    key={instructor.id}
-                                    value={instructor.name}
+                                    key={instructor}
+                                    value={instructor}
                                     onSelect={() => {
                                       handleInputChange(
                                         "instructor",
-                                        instructor.name
+                                        instructor
                                       );
                                       setInstructorOpen(false);
                                     }}
                                   >
                                     <Check
                                       className={`mr-2 h-4 w-4 ${
-                                        courseData.instructor ===
-                                        instructor.name
+                                        courseData.instructor === instructor
                                           ? "opacity-100"
                                           : "opacity-0"
                                       }`}
                                     />
-                                    {instructor.name} - {instructor.department}
+                                    {instructor}
                                   </CommandItem>
                                 ))}
                               </CommandGroup>

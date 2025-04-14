@@ -292,10 +292,7 @@ export const syllabusController: SyllabusRequestHandlers = {
           return res.status(400).json({ message: "No file uploaded" });
         }
 
-        // Now we have the file path
         const filePath = req.file.path;
-
-        // Process the PDF
         const text = await pdfToText(filePath);
 
         const termDates =
@@ -312,7 +309,6 @@ export const syllabusController: SyllabusRequestHandlers = {
            May 23–25 (Friday–Sunday) – University Commencement Weekend";
         const output = await parseSyllabus(text, termDates);
 
-        // Optionally, clean up the uploaded file
         fs.unlinkSync(filePath);
 
         return res.status(200).json({

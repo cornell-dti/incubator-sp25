@@ -42,7 +42,7 @@ export default function OnboardingPage() {
         const fileProgress = Math.round((i / files.length) * 100);
         setProgress(fileProgress);
 
-        // Create FormData for this specific file
+        // Create FormData for specific file
         const formData = new FormData();
         formData.append("file", file);
 
@@ -69,8 +69,6 @@ export default function OnboardingPage() {
 
         // Get the parsed data
         const parsedData = await response.data;
-
-        // Add to our array of parsed syllabi
         parsedSyllabi.push({
           id: i + 1,
           parsedContent: parsedData.text,
@@ -86,7 +84,6 @@ export default function OnboardingPage() {
       // Store parsed syllabi in localStorage for the review page
       localStorage.setItem("parsedSyllabi", JSON.stringify(parsedSyllabi));
 
-      // Final progress
       setProgress(100);
 
       // Navigate to the first syllabus review page

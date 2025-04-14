@@ -10,6 +10,12 @@ export interface User {
   updatedAt?: Timestamp;
 }
 
+export interface Subject {
+  id?: string;
+  subjectCode: string;
+  subjectName: string;
+}
+
 export interface Course {
   id?: string;
   courseCode: string;
