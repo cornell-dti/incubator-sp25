@@ -1,5 +1,5 @@
 import { db } from "../config/firebase";
-import { User } from "../types";
+import { User, Course } from "../types";
 import { Timestamp } from "firebase-admin/firestore";
 import { UserRequestHandlers } from "../types/requests";
 
@@ -122,6 +122,50 @@ export const userController: UserRequestHandlers = {
     } catch (error) {
       console.error("Error deleting user:", error);
       res.status(500).json({ error: "Failed to delete user" });
+    }
+  },
+  addCourse: async (req, res) => {
+    try {
+      const { courseId } = req.body;
+      const userId = req.user?.uid;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const userRef = db.collection("users").doc(userId);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const userData = userDoc.data() as User;
+      const courses: Course[] = userData.courses || [];
+      const courseRef = db.collection("courses").doc(courseId);
+      const courseDoc = await courseRef.get();
+      if (!courseDoc.exists) {
+        return res.status(404).json({ error: "Course not found" });
+      }
+      const courseData = courseDoc.data() as Course;
+      const course: Course = {
+        id: courseDoc.id,
+        ...courseData,
+      };
+
+      // Check if course already exists
+      const courseExists = courses.some((c) => c.id === course.id);
+      if (courseExists) {
+        return res.status(400).json({ error: "Course already added" });
+      }
+
+      // Add course to user's courses
+      courses.push(course);
+      await userRef.update({ courses });
+      res.status(200).json({
+        id: userId,
+        courses,
+      });
+    } catch (error) {
+      console.error("Error adding course:", error);
+      res.status(500).json({ error: "Failed to add course" });
     }
   },
 };
