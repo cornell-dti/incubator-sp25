@@ -72,12 +72,7 @@ export default function OnboardingPage() {
         parsedSyllabi.push({
           id: i + 1,
           parsedContent: parsedData.text,
-          extractedData: parsedData.syllabus || {
-            courseCode: parsedData.courseCode || "",
-            courseName: parsedData.courseName || "",
-            instructor: parsedData.instructor || "",
-            deadlines: parsedData.deadlines || [],
-          },
+          extractedData: parsedData.syllabus
         });
       }
 

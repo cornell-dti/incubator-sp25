@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import {
@@ -42,92 +42,85 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { AuthGuard } from "@/components/AuthGuard";
+import { getAuth } from "firebase/auth";
+import { createApiService } from "@/lib/api";
 
 interface Section {
   sectionId: string;
   instructor: string;
 }
 
-const sampleSyllabi = [
-  {
-    id: 1,
-    fileName: "CS4700_Syllabus.pdf",
-    content: `
-      CS 4700: Foundations of Artificial Intelligence
-      
-      Instructor: Dr. Smith
-      Email: smith@cornell.edu
-      Office Hours: Monday 2-4pm, Gates Hall 345
-      
-      Course Description:
-      This course introduces the fundamental concepts and techniques in artificial intelligence, including search, knowledge representation, reasoning, planning, and machine learning.
-      
-      Grading:
-      - Homework: 40%
-      - Midterm: 20%
-      - Final Project: 30%
-      - Participation: 10%
-      
-      Important Dates:
-      - Homework 1: September 15
-      - Midterm Exam: October 5
-      - Project Proposal: October 20
-      - Final Project Due: December 15
-    `,
-    extractedData: {
-      courseCode: "CS 4700",
-      courseName: "Foundations of Artificial Intelligence",
-      instructor: "Dr. Smith",
-      deadlines: [
-        {
-          id: 1,
-          title: "Homework 1",
-          dueDate: "2023-09-15",
-          type: "Assignment",
-        },
-        { id: 2, title: "Midterm Exam", dueDate: "2023-10-05", type: "Exam" },
-        {
-          id: 3,
-          title: "Project Proposal",
-          dueDate: "2023-10-20",
-          type: "Assignment",
-        },
-        {
-          id: 4,
-          title: "Final Project",
-          dueDate: "2023-12-15",
-          type: "Project",
-        },
-      ],
-    },
-  },
-];
+interface Todo {
+  id?: number;
+  title: string;
+  date: string;
+  eventType: string;
+  priority: number;
+}
+
+interface ExtractedData {
+  courseCode: string;
+  courseName: string;
+  instructor: string;
+  todos: Todo[];
+}
+
+interface Syllabus {
+  id: number;
+  parsedContent: string;
+  extractedData: ExtractedData;
+}
+
+const auth = getAuth();
+const currentUser = auth.currentUser;
+const apiService = createApiService();
 
 export default function SyllabusReviewPage() {
   const router = useRouter();
   const params = useParams();
   const syllabusId = Number.parseInt(params.id as string);
 
-  const [syllabus, setSyllabus] = useState(null);
+  const [syllabus, setSyllabus] = useState<Partial<Syllabus>>({});
   const [courseData, setCourseData] = useState({
     courseCode: "",
     courseName: "",
     instructor: "",
   });
-  const [deadlines, setDeadlines] = useState([]);
-  const [editingDeadlineId, setEditingDeadlineId] = useState(null);
+  const [deadlines, setDeadlines] = useState<Todo[]>([]);
+  const [editingDeadlineId, setEditingDeadlineId] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
-  const [totalSyllabi, setTotalSyllabi] = useState(sampleSyllabi.length);
+  const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
+  const [totalSyllabi, setTotalSyllabi] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Course[]>([]);
   const [instructorQuery, setInstructorQuery] = useState("");
   const [instructorResults, setInstructorResults] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Add this state for the instructor dropdown
   const [instructorOpen, setInstructorOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [instructors, setInstructors] = useState<string[]>([]);
+  const deadlinesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fixed useEffect with dependency array to prevent infinite re-renders
+  useEffect(() => {
+    const localSyllabi = localStorage.getItem("parsedSyllabi");
+    console.log(localSyllabi);
+    if (localSyllabi !== null) {
+      try {
+        const parsedSyllabi = JSON.parse(localSyllabi);
+        setSyllabi(parsedSyllabi);
+        setTotalSyllabi(parsedSyllabi.length);
+      } catch (err) {
+        console.error("Error parsing syllabi from localStorage:", err);
+        setError("Failed to load saved syllabi");
+      }
+    }
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
     const searchCourses = async () => {
@@ -162,7 +155,7 @@ export default function SyllabusReviewPage() {
 
   useEffect(() => {
     const searchInstructors = async () => {
-      if (searchInstructors.length < 2) {
+      if (instructorQuery.length < 2) {
         setInstructorResults([]);
         return;
       }
@@ -170,11 +163,11 @@ export default function SyllabusReviewPage() {
       setIsSearching(true);
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/search/instructor/${courseData.courseCode}/${searchInstructors}`
+          `http://localhost:3000/api/search/instructor/${courseData.courseCode}/${instructorQuery}`
         );
         console.log(response.data);
-        const courses = response.data.instructors || [];
-        setInstructorResults(courses);
+        const instructors = response.data.instructors || [];
+        setInstructorResults(instructors);
       } catch (error) {
         console.error("Error searching instructors:", error);
         setInstructorResults([]);
@@ -189,17 +182,20 @@ export default function SyllabusReviewPage() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [instructorQuery]);
+  }, [instructorQuery, courseData.courseCode]);
 
   useEffect(() => {
     const fetchCourses = async () => {
+      setIsLoading(true);
       try {
         const response = await axios.get("http://localhost:3000/api/courses");
         const mappedCourses = response.data;
         setCourses(mappedCourses);
-        setInstructorOpen(true);
       } catch (error) {
         console.error("Error fetching courses:", error);
+        setError("Failed to fetch courses");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -209,34 +205,50 @@ export default function SyllabusReviewPage() {
   useEffect(() => {
     const fetchInstructors = async () => {
       if (!courseData.courseCode) return;
+      
+      setIsLoading(true);
       try {
-        const course = await axios.get(
+        const response = await axios.get(
           `http://localhost:3000/api/courses/${courseData.courseCode}`
         );
-        const instructorList = course.data.sections.map((section: Section) => {
+        const instructorList = response.data.sections.map((section: Section) => {
           return section.instructor;
         });
         setInstructors(instructorList);
       } catch (error) {
         console.error("Error fetching instructors:", error);
+        setError("Failed to fetch instructors");
+      } finally {
+        setIsLoading(false);
       }
     };
+    
     fetchInstructors();
   }, [courseData.courseCode]);
 
   useEffect(() => {
     // In a real app, this would be an API call
-    const currentSyllabus = sampleSyllabi.find((s) => s.id === syllabusId);
+    const currentSyllabus = syllabi.find((s) => s.id === syllabusId);
     if (currentSyllabus) {
       setSyllabus(currentSyllabus);
-      setCourseData({
-        courseCode: currentSyllabus.extractedData.courseCode,
-        courseName: currentSyllabus.extractedData.courseName,
-        instructor: currentSyllabus.extractedData.instructor,
-      });
-      setDeadlines(currentSyllabus.extractedData.deadlines);
+      
+      // Add null/undefined checks
+      if (currentSyllabus.extractedData) {
+        setCourseData({
+          courseCode: currentSyllabus.extractedData.courseCode || "",
+          courseName: currentSyllabus.extractedData.courseName || "",
+          instructor: currentSyllabus.extractedData.instructor || "",
+        });
+        
+        const todosWithIds = (currentSyllabus.extractedData.todos || []).map((todo, index) => ({
+          ...todo,
+          id: todo.id || index + 1
+        }));
+        
+        setDeadlines(todosWithIds);
+      }
     }
-  }, [syllabusId]);
+  }, [syllabusId, syllabi]);
 
   const handleCourseSelect = (selectedCourse: Course) => {
     setCourseData({
@@ -249,27 +261,96 @@ export default function SyllabusReviewPage() {
     setSearchResults([]);
   };
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: string, value: string) => {
     setCourseData({
       ...courseData,
       [field]: value,
     });
   };
 
-  const handleDeadlineChange = (id, field, value) => {
+  // Updated to work with the correct field names
+  const handleDeadlineChange = (id: string | number, field: string, value: string) => {
     setDeadlines(
-      deadlines.map((deadline) =>
-        deadline.id === id ? { ...deadline, [field]: value } : deadline
-      )
+      deadlines.map((deadline) => {
+        if (deadline.id === id) {
+          if (field === "dueDate") {
+            return {
+              ...deadline,
+              date: new Date(value).toISOString()
+            };
+          }
+          
+          return { ...deadline, [field]: value };
+        }
+        return deadline;
+      })
     );
   };
 
-  const handleNext = () => {
-    // In a real app, you would save the changes
-    if (syllabusId < totalSyllabi) {
-      router.push(`/onboarding/review/${syllabusId + 1}`);
-    } else {
-      router.push("/dashboard");
+  // Function to scroll to the bottom of the deadlines container
+  const scrollToBottom = () => {
+    if (deadlinesContainerRef.current) {
+      const container = deadlinesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
+    }
+  };
+
+   // Function to add a new deadline and scroll to it
+   const handleAddDeadline = () => {
+    const newId =
+      deadlines.length > 0
+        ? Math.max(...deadlines.map((d) => d.id || 0)) + 1
+        : 1;
+    setDeadlines([
+      ...deadlines,
+      {
+        id: newId,
+        title: "New Deadline",
+        date: new Date().toISOString(),
+        eventType: "assignment",
+        priority: 3
+      },
+    ]);
+    
+    // Scroll to the bottom after the state updates and component re-renders
+    setTimeout(scrollToBottom, 100);
+  };
+
+  const handleNext = async () => {
+    try {
+      setIsLoading(true);
+      
+      for (const deadline of deadlines) {
+        const todoData = {
+          userId: currentUser,
+          title: deadline.title,
+          date: deadline.date,
+          eventType: deadline.eventType,
+          priority: deadline.priority,
+          courseCode: courseData.courseCode,
+        };
+        
+        if (!todoData.title || !todoData.date || !todoData.eventType || !todoData.courseCode) {
+          console.warn('Skipping incomplete todo:', todoData);
+          continue;
+        }
+        
+        await axios.post("http://localhost:3000/api/todos", todoData);
+      }
+      setDeadlines([]);
+      // add course
+      await apiService.addTodos(courseData.courseCode)
+
+      if (syllabusId < totalSyllabi) {
+        router.push(`/onboarding/review/${syllabusId + 1}`);
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error saving deadlines:", error);
+      setError("Failed to save deadlines. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -279,10 +360,43 @@ export default function SyllabusReviewPage() {
     }
   };
 
-  if (!syllabus) {
+  // Map eventType to UI-friendly type
+  const getEventTypeDisplayName = (eventType: string): string => {
+    const typeMap: Record<string, string> = {
+      "readings": "Reading",
+      "memos": "Memo",
+      "assignments": "Assignment",
+      "exams": "Exam",
+      "projects": "Project",
+      "presentations": "Presentation"
+    };
+    
+    return typeMap[eventType] || eventType.charAt(0).toUpperCase() + eventType.slice(1);
+  };
+
+  // Show loading state
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         Loading...
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center flex-col">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button onClick={() => setError(null)}>Retry</Button>
+      </div>
+    );
+  }
+
+  if (!syllabus || !syllabus.id) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        No syllabus found with ID: {syllabusId}
       </div>
     );
   }
@@ -308,7 +422,7 @@ export default function SyllabusReviewPage() {
           <div className="container px-4 md:px-6">
             <div className="mb-6">
               <h1 className="text-2xl font-bold">
-                Review Syllabus: {syllabus.fileName}
+                Review Syllabus: {syllabus.extractedData?.courseCode || "Unknown Course"}
               </h1>
               <p className="text-muted-foreground">
                 Review and edit the extracted information from your syllabus
@@ -324,7 +438,7 @@ export default function SyllabusReviewPage() {
                     <FileText className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="h-[70vh] overflow-y-auto border rounded-md p-4 bg-muted/30 font-mono text-sm whitespace-pre-wrap">
-                    {syllabus.content}
+                    {syllabus.parsedContent || "No content available"}
                   </div>
                 </CardContent>
               </Card>
@@ -434,31 +548,34 @@ export default function SyllabusReviewPage() {
                               onValueChange={setInstructorQuery}
                             />
                             <CommandList>
-                              <CommandEmpty>No instructor found.</CommandEmpty>
-                              <CommandGroup className="max-h-60 overflow-y-auto">
-                                {instructors.map((instructor) => (
-                                  <CommandItem
-                                    key={instructor}
-                                    value={instructor}
-                                    onSelect={() => {
-                                      handleInputChange(
-                                        "instructor",
-                                        instructor
-                                      );
-                                      setInstructorOpen(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={`mr-2 h-4 w-4 ${
-                                        courseData.instructor === instructor
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      }`}
-                                    />
-                                    {instructor}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
+                              {instructors.length === 0 ? (
+                                <CommandEmpty>No instructors found.</CommandEmpty>
+                              ) : (
+                                <CommandGroup className="max-h-60 overflow-y-auto">
+                                  {instructors.map((instructor) => (
+                                    <CommandItem
+                                      key={instructor}
+                                      value={instructor}
+                                      onSelect={() => {
+                                        handleInputChange(
+                                          "instructor",
+                                          instructor
+                                        );
+                                        setInstructorOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={`mr-2 h-4 w-4 ${
+                                          courseData.instructor === instructor
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        }`}
+                                      />
+                                      {instructor}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
                             </CommandList>
                           </Command>
                         </PopoverContent>
@@ -475,21 +592,7 @@ export default function SyllabusReviewPage() {
                     <h2 className="text-lg font-semibold">Deadlines</h2>
                     <Button
                       size="sm"
-                      onClick={() => {
-                        const newId =
-                          deadlines.length > 0
-                            ? Math.max(...deadlines.map((d) => d.id)) + 1
-                            : 1;
-                        setDeadlines([
-                          ...deadlines,
-                          {
-                            id: newId,
-                            title: "New Deadline",
-                            dueDate: new Date().toISOString().split("T")[0],
-                            type: "Assignment",
-                          },
-                        ]);
-                      }}
+                      onClick={() => handleAddDeadline()}
                       className="bg-rose-500 hover:bg-rose-600"
                     >
                       <Plus className="h-4 w-4 mr-1" />
@@ -497,7 +600,7 @@ export default function SyllabusReviewPage() {
                     </Button>
                   </div>
 
-                  <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                  <div ref={deadlinesContainerRef} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                     {deadlines.length === 0 ? (
                       <p className="text-center text-muted-foreground py-4">
                         No deadlines found in this syllabus
@@ -531,7 +634,7 @@ export default function SyllabusReviewPage() {
                               value={deadline.title}
                               onChange={(e) =>
                                 handleDeadlineChange(
-                                  deadline.id,
+                                  deadline.id || 0,
                                   "title",
                                   e.target.value
                                 )
@@ -545,27 +648,25 @@ export default function SyllabusReviewPage() {
                               Type
                             </Label>
                             <Select
-                              value={deadline.type}
+                              value={deadline.eventType}
                               onValueChange={(value) =>
-                                handleDeadlineChange(deadline.id, "type", value)
+                                handleDeadlineChange(deadline.id || 0, "eventType", value)
                               }
                             >
                               <SelectTrigger
                                 id={`deadline-type-${deadline.id}`}
                               >
-                                <SelectValue placeholder="Select type" />
+                                <SelectValue placeholder="Select type">
+                                  {getEventTypeDisplayName(deadline.eventType)}
+                                </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Assignment">
-                                  Assignment
-                                </SelectItem>
-                                <SelectItem value="Exam">Exam</SelectItem>
-                                <SelectItem value="Quiz">Quiz</SelectItem>
-                                <SelectItem value="Project">Project</SelectItem>
-                                <SelectItem value="Paper">Paper</SelectItem>
-                                <SelectItem value="Presentation">
-                                  Presentation
-                                </SelectItem>
+                                <SelectItem value="readings">Reading</SelectItem>
+                                <SelectItem value="assignments">Assignment</SelectItem>
+                                <SelectItem value="exams">Exam</SelectItem>
+                                <SelectItem value="projects">Project</SelectItem>
+                                <SelectItem value="presentations">Presentation</SelectItem>
+                                <SelectItem value="memos">Memo</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -582,8 +683,8 @@ export default function SyllabusReviewPage() {
                                   id={`deadline-date-${deadline.id}`}
                                 >
                                   <Calendar className="mr-2 h-4 w-4" />
-                                  {deadline.dueDate ? (
-                                    format(new Date(deadline.dueDate), "PPP")
+                                  {deadline.date ? (
+                                    format(new Date(deadline.date), "PPP")
                                   ) : (
                                     <span>Pick a date</span>
                                   )}
@@ -592,18 +693,41 @@ export default function SyllabusReviewPage() {
                               <PopoverContent className="w-auto p-0">
                                 <CalendarComponent
                                   mode="single"
-                                  selected={new Date(deadline.dueDate)}
+                                  selected={deadline.date ? new Date(deadline.date) : undefined}
                                   onSelect={(date) =>
                                     handleDeadlineChange(
-                                      deadline.id,
-                                      "dueDate",
-                                      date.toISOString().split("T")[0]
+                                      deadline.id || 0,
+                                      "dueDate", // This is mapped to 'date' in handleDeadlineChange
+                                      date ? date.toISOString().split("T")[0] : ""
                                     )
                                   }
                                   initialFocus
                                 />
                               </PopoverContent>
                             </Popover>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor={`deadline-priority-${deadline.id}`}>
+                              Priority
+                            </Label>
+                            <Select
+                              value={deadline.priority.toString()}
+                              onValueChange={(value) =>
+                                handleDeadlineChange(deadline.id || 0, "priority", value)
+                              }
+                            >
+                              <SelectTrigger
+                                id={`deadline-priority-${deadline.id}`}
+                              >
+                                <SelectValue placeholder="Select priority" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1">High</SelectItem>
+                                <SelectItem value="2">Medium</SelectItem>
+                                <SelectItem value="3">Low</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                       ))

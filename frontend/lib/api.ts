@@ -81,5 +81,16 @@ export const createApiService = () => {
         throw error;
       }
     },
+
+    addTodos: async (courseCode:string) => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await axios.post(`/api/users/add-course/${courseCode}`, {headers});
+        return response.data
+      } catch (error) {
+        console.error("Error adding todos:", error);
+        throw error;
+      }
+    }
   };
 };
