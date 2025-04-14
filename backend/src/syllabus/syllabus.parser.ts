@@ -49,7 +49,6 @@ export const parseSyllabus = async (
   termDates: string
 ) => {
   try {
-    console.log("Starting to parse syllabus");
     const messages: Message[] = [
       {
         role: "system",
@@ -122,7 +121,6 @@ export const parseSyllabus = async (
         },
       }
     );
-    console.log("Completed syllabus parsing");
     return response.data;
   } catch (error) {
     console.error("Error parsing syllabus:", error);
