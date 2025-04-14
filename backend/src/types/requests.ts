@@ -56,4 +56,5 @@ export interface TodoRequestHandlers {
 
 export interface SearchRequestHandlers {
   getCourseSearch: RequestHandler<{ query: string }>;
+  getInstructorSearch: RequestHandler<{ query: string }>;
 }

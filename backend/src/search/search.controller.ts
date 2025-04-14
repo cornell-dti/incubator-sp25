@@ -83,4 +83,37 @@ export const searchController: SearchRequestHandlers = {
         .json({ error: "Unable to complete course search" });
     }
   },
+  getInstructorSearch: async (req, res) => {
+    try {
+      const query = req.params.query;
+      const courseRef = await db.collection("courses").get();
+
+      let allInstructors: string[] = [];
+      courseRef.forEach((doc) => {
+        const courseData = doc.data();
+        if (courseData.sections && Array.isArray(courseData.sections)) {
+          courseData.sections.forEach((section) => {
+            if (section.instructor) {
+              allInstructors.push(section.instructor);
+            }
+          });
+        }
+      });
+
+      const filteredInstructors = allInstructors.filter((item) =>
+        item.toLowerCase().includes(query.toLowerCase())
+      );
+
+      const uniqueInstructors = Array.from(
+        new Map(filteredInstructors.map((item) => [item, item])).values()
+      );
+
+      return res.status(200).json({ instructors: uniqueInstructors });
+    } catch (error) {
+      console.log("Unable to retrieve instructors:", error);
+      return res
+        .status(500)
+        .json({ error: "Unable to complete instructor search" });
+    }
+  },
 };
