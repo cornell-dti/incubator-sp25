@@ -1,109 +1,107 @@
-import { auth } from "@/lib/firebase";
-import { User, Course } from "@/@types/models";
+import { useAuth } from "@/context/AuthContext";
+import { User, Course, Todo, Exam } from "@/@types/models";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-// For authenticated requests
-const getAuthHeaders = async () => {
-  const user = auth.currentUser;
-  if (!user) {
-    throw new Error("No authenticated user");
-  }
+export const createApiService = () => {
+  const { getAuthToken } = useAuth();
 
-  try {
-    const token = await user.getIdToken(true);
+  // For authenticated requests
+  const getAuthHeaders = async () => {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("No authenticated user");
+    }
+
     return {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     };
-  } catch (error) {
-    console.error("Failed to get authentication token:", error);
-    throw new Error("Authentication failed. Please sign in again.");
-  }
-};
+  };
 
-export const apiService = {
-  getCurrentUser: async (): Promise<User> => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error fetching user: ${response.statusText}`);
-      }
-
-      const user = await response.json();
-      return user;
-    } catch (error) {
-      console.error("Error getting current user:", error);
-      throw error;
-    }
-  },
-
-  getCourses: async (): Promise<Course[]> => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/courses`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error fetching courses: ${response.statusText}`);
-      }
-
-      const course = await response.json();
-      return course;
-    } catch (error) {
-      console.error("Error getting courses:", error);
-      throw error;
-    }
-  },
-
-  getCourseByCode: async (courseCode: string): Promise<Course> => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(
-        `${API_BASE_URL}/api/courses/${courseCode}`,
-        {
+  return {
+    getCurrentUser: async (): Promise<User> => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
           method: "GET",
           headers,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error fetching user: ${response.statusText}`);
         }
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching course: ${response.statusText}`);
-      }
 
-      const course: Course = await response.json();
-      return course;
-    } catch (error) {
-      console.error("Error getting course by code:", error);
-      throw error;
-    }
-  },
-
-  updateUser: async (
-    userId: string,
-    updatedUserData: Partial<User>
-  ): Promise<User> => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(updatedUserData),
-      });
-      if (!response.ok) {
-        throw new Error(`Error updating user: ${response.statusText}`);
+        const user = await response.json();
+        return user;
+      } catch (error) {
+        console.error("Error getting current user:", error);
+        throw error;
       }
-      const updatedUser: User = await response.json();
-      return updatedUser;
-    } catch (error) {
-      console.error("Error updating user:", error);
-      throw error;
-    }
-  },
+    },
+
+    getCourseByCode: async (courseCode: string): Promise<Course> => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(
+          `${API_BASE_URL}/api/courses/${courseCode}`,
+          {
+            method: "GET",
+            headers,
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`Error fetching course: ${response.statusText}`);
+        }
+
+        const course: Course = await response.json();
+        return course;
+      } catch (error) {
+        console.error("Error getting course by code:", error);
+        throw error;
+      }
+    },
+
+    getTodosByUser: async (): Promise<Todo[]> => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/api/todos/user`, {
+          method: "GET",
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error fetching todos: ${response.statusText}`);
+        }
+
+        const todos: Todo[] = await response.json();
+        return todos;
+      } catch (error) {
+        console.error("Error getting todos by user:", error);
+        throw error;
+      }
+    },
+    getExamsByCourseId: async (courseId: string): Promise<Exam[]> => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(
+          `${API_BASE_URL}/api/exams/course/${courseId}`,
+          {
+            method: "GET",
+            headers,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Error fetching exams: ${response.statusText}`);
+        }
+
+        const exams: Exam[] = await response.json();
+        return exams;
+      } catch (error) {
+        console.error("Error getting exams by course code:", error);
+        throw error;
+      }
+    },
+  };
 };

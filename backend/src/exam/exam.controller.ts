@@ -63,7 +63,7 @@ export const examController: ExamRequestHandlers = {
         return res.status(404).json({ error: "Exam not found" });
       }
 
-      if (docData.userId !== res.locals.userId) {
+      if (docData.userId !== req.user?.uid) {
         return res.status(403).json({ error: "Unauthorized" });
       }
 
@@ -94,7 +94,7 @@ export const examController: ExamRequestHandlers = {
         return res.status(404).json({ error: "Exam not found" });
       }
 
-      if (docData.userId !== res.locals.userId) {
+      if (docData.userId !== req.user?.uid) {
         return res.status(403).json({ error: "Unauthorized" });
       }
 
@@ -104,6 +104,31 @@ export const examController: ExamRequestHandlers = {
     } catch (error) {
       console.error("Error deleting exam:", error);
       res.status(500).json({ error: "Failed to delete exam" });
+    }
+  },
+
+  getExamsByCourseId: async (req, res) => {
+    try {
+      const courseId = req.params.courseId;
+
+      const snapshot = await db
+        .collection("exams")
+        .where("courseId", "==", courseId)
+        .get();
+
+      const exams: Exam[] = [];
+
+      snapshot.forEach((doc) => {
+        exams.push({
+          id: doc.id,
+          ...(doc.data() as Exam),
+        });
+      });
+
+      res.status(200).json(exams);
+    } catch (error) {
+      console.error("Error getting exams by course ID:", error);
+      res.status(500).json({ error: "Failed to retrieve exams" });
     }
   },
 };

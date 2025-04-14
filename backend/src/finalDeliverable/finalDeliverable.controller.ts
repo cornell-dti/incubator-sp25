@@ -66,7 +66,7 @@ export const finalDeliverableController: FinalDeliverableRequestHandlers = {
         return res.status(404).json({ error: "Final deliverable not found" });
       }
 
-      if (docData.userId !== res.locals.userId) {
+      if (docData.userId !== req.user?.uid) {
         return res.status(403).json({ error: "Unauthorized" });
       }
 
@@ -99,7 +99,7 @@ export const finalDeliverableController: FinalDeliverableRequestHandlers = {
         return res.status(404).json({ error: "Final deliverable not found" });
       }
 
-      if (docData.userId !== res.locals.userId) {
+      if (docData.userId !== req.user?.uid) {
         return res.status(403).json({ error: "Unauthorized" });
       }
 
