@@ -42,15 +42,16 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { AuthGuard } from "@/components/AuthGuard";
-import { getAuth } from "firebase/auth";
 import { createApiService } from "@/lib/api";
+import { Todo } from "@/@types";
+import { Timestamp } from "firebase/firestore";
 
 interface Section {
   sectionId: string;
   instructor: string;
 }
 
-interface Todo {
+interface TodoSimplified {
   id?: number;
   title: string;
   date: string;
@@ -62,7 +63,7 @@ interface ExtractedData {
   courseCode: string;
   courseName: string;
   instructor: string;
-  todos: Todo[];
+  todos: TodoSimplified[];
 }
 
 interface Syllabus {
@@ -71,11 +72,8 @@ interface Syllabus {
   extractedData: ExtractedData;
 }
 
-const auth = getAuth();
-const currentUser = auth.currentUser;
-const apiService = createApiService();
-
 export default function SyllabusReviewPage() {
+  const apiService = createApiService();
   const router = useRouter();
   const params = useParams();
   const syllabusId = Number.parseInt(params.id as string);
@@ -86,7 +84,7 @@ export default function SyllabusReviewPage() {
     courseName: "",
     instructor: "",
   });
-  const [deadlines, setDeadlines] = useState<Todo[]>([]);
+  const [deadlines, setDeadlines] = useState<TodoSimplified[]>([]);
   const [editingDeadlineId, setEditingDeadlineId] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
@@ -321,13 +319,13 @@ export default function SyllabusReviewPage() {
       setIsLoading(true);
       
       for (const deadline of deadlines) {
-        const todoData = {
-          userId: currentUser,
+        const todoData:Todo = {
+          userId: "",
+          courseCode: courseData.courseCode,
           title: deadline.title,
-          date: deadline.date,
+          date: Timestamp.fromDate(new Date(deadline.date)),
           eventType: deadline.eventType,
           priority: deadline.priority,
-          courseCode: courseData.courseCode,
         };
         
         if (!todoData.title || !todoData.date || !todoData.eventType || !todoData.courseCode) {
@@ -335,11 +333,11 @@ export default function SyllabusReviewPage() {
           continue;
         }
         
-        await axios.post("http://localhost:3000/api/todos", todoData);
+        await apiService.addTodo(todoData);
       }
       setDeadlines([]);
       // add course
-      await apiService.addTodos(courseData.courseCode)
+      await apiService.addCourse(courseData.courseCode)
 
       if (syllabusId < totalSyllabi) {
         router.push(`/onboarding/review/${syllabusId + 1}`);

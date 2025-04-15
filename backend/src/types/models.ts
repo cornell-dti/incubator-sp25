@@ -64,5 +64,5 @@ export interface Todo {
   title: string;
   date: Timestamp;
   eventType: string;
-  priority: string;
+  priority: number;
 }

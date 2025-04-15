@@ -26,7 +26,6 @@ export const todoController: TodoRequestHandlers = {
       const todoData: Todo = req.body;
 
       if (
-        !todoData.userId ||
         !todoData.title ||
         !todoData.date ||
         !todoData.eventType ||
