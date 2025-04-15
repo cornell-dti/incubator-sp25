@@ -61,6 +61,7 @@ export const parseSyllabus = async (
       \
       {\
       courseCode: CS 2110,\
+      courseName: Object-Oriented Programming and Data Structures,\
       instructor: Matthew Eichorn, Curran Muhlberger,\
       todos[]: [\
         {\

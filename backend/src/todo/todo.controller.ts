@@ -29,7 +29,8 @@ export const todoController: TodoRequestHandlers = {
         !todoData.title ||
         !todoData.date ||
         !todoData.eventType ||
-        !todoData.courseCode
+        !todoData.courseCode ||
+        !todoData.priority
       ) {
         return res.status(400).json({
           error: "Missing required fields. All todo properties are required.",

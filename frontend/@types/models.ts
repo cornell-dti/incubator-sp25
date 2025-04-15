@@ -58,5 +58,5 @@ export interface Todo {
   title: string;
   date: FirestoreTimestamp;
   eventType: string;
-  // priority: string;
+  priority: number;
 }

@@ -81,5 +81,27 @@ export const createApiService = () => {
         throw error;
       }
     },
+
+    addCourse: async (courseCode:string) => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await api.post(`/api/users/add-course/${courseCode}`, {}, {headers});
+        return response.data
+      } catch (error) {
+        console.error("Error adding course:", error);
+        throw error;
+      }
+    },
+
+    addTodo: async (todoData : Todo) => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await api.post(`/api/todos/`, todoData, {headers});
+        return response.data
+      } catch (error) {
+        console.error("Error adding todos:", error);
+        throw error;
+      }
+    }
   };
 };
