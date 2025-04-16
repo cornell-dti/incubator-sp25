@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import axios from "axios";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,7 +12,6 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { Course } from "@/@types";
 
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -42,254 +40,42 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { AuthGuard } from "@/components/AuthGuard";
-import { createApiService } from "@/lib/api";
-import { Todo } from "@/@types";
-import { Timestamp } from "firebase/firestore";
 import { ErrorNotification } from "@/components/error-notification";
-
-interface Section {
-  sectionId: string;
-  instructor: string;
-}
-
-interface TodoSimplified {
-  id?: number;
-  title: string;
-  date: string;
-  eventType: string;
-  priority: number;
-}
-
-interface ExtractedData {
-  courseCode: string;
-  courseName: string;
-  instructor: string;
-  todos: TodoSimplified[];
-}
-
-interface Syllabus {
-  id: number;
-  parsedContent: string;
-  extractedData: ExtractedData;
-}
+import { useReviewData } from "@/hooks/use-review-data";
+import { Course } from "@/@types";
 
 export default function SyllabusReviewPage() {
-  const apiService = createApiService();
   const router = useRouter();
   const params = useParams();
   const syllabusId = Number.parseInt(params.id as string);
-
-  const [syllabus, setSyllabus] = useState<Partial<Syllabus>>({});
-  const [courseData, setCourseData] = useState({
-    courseCode: "",
-    courseName: "",
-    instructor: "",
-  });
-  const [deadlines, setDeadlines] = useState<TodoSimplified[]>([]);
-  const [editingDeadlineId, setEditingDeadlineId] = useState<number | null>(null);
-  const [open, setOpen] = useState(false);
-  const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
-  const [totalSyllabi, setTotalSyllabi] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Course[]>([]);
-  const [instructorQuery, setInstructorQuery] = useState("");
-  const [instructorResults, setInstructorResults] = useState<string[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  // Add notification state for displaying errors, warnings, info messages, etc.
-  const [notification, setNotification] = useState<{
-    type: 'error' | 'warning' | 'info' | 'success';
-    message: string;
-  } | null>(null);
-
-  // Add this state for the instructor dropdown
-  const [instructorOpen, setInstructorOpen] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [instructors, setInstructors] = useState<string[]>([]);
   const deadlinesContainerRef = useRef<HTMLDivElement>(null);
-
-  // Fixed useEffect with dependency array to prevent infinite re-renders
-  useEffect(() => {
-    const localSyllabi = localStorage.getItem("parsedSyllabi");
-    console.log(localSyllabi);
-    if (localSyllabi !== null) {
-      try {
-        const parsedSyllabi = JSON.parse(localSyllabi);
-        setSyllabi(parsedSyllabi);
-        setTotalSyllabi(parsedSyllabi.length);
-      } catch (err) {
-        console.error("Error parsing syllabi from localStorage:", err);
-        setError("Failed to load saved syllabi");
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const searchCourses = async () => {
-      if (searchQuery.length < 2) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsSearching(true);
-      try {
-        const response = await axios.get(
-          `http://localhost:3000/api/search/${searchQuery}`
-        );
-        console.log(response.data);
-        const courses = response.data.courses || [];
-        setSearchResults(courses);
-      } catch (error) {
-        console.error("Error searching courses:", error);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    };
-
-    // Debounce the search to avoid making too many requests
-    const timeoutId = setTimeout(() => {
-      searchCourses();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    const searchInstructors = async () => {
-      if (instructorQuery.length < 2) {
-        setInstructorResults([]);
-        return;
-      }
-
-      setIsSearching(true);
-      try {
-        const response = await axios.get(
-          `http://localhost:3000/api/search/instructor/${courseData.courseCode}/${instructorQuery}`
-        );
-        console.log(response.data);
-        const instructors = response.data.instructors || [];
-        setInstructorResults(instructors);
-      } catch (error) {
-        console.error("Error searching instructors:", error);
-        setInstructorResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    };
-
-    // Debounce the search to avoid making too many requests
-    const timeoutId = setTimeout(() => {
-      searchInstructors();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [instructorQuery, courseData.courseCode]);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get("http://localhost:3000/api/courses");
-        const mappedCourses = response.data;
-        setCourses(mappedCourses);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-        setError("Failed to fetch courses");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, []);
-
-  useEffect(() => {
-    const fetchInstructors = async () => {
-      if (!courseData.courseCode) return;
-      
-      setIsLoading(true);
-      try {
-        const response = await axios.get(
-          `http://localhost:3000/api/courses/${courseData.courseCode}`
-        );
-        const instructorList = response.data.sections.map((section: Section) => {
-          return section.instructor;
-        });
-        setInstructors(instructorList);
-      } catch (error) {
-        console.error("Error fetching instructors:", error);
-        setError("Failed to fetch instructors");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchInstructors();
-  }, [courseData.courseCode]);
-
-  useEffect(() => {
-    // In a real app, this would be an API call
-    const currentSyllabus = syllabi.find((s) => s.id === syllabusId);
-    if (currentSyllabus) {
-      setSyllabus(currentSyllabus);
-      
-      // Add null/undefined checks
-      if (currentSyllabus.extractedData) {
-        setCourseData({
-          courseCode: currentSyllabus.extractedData.courseCode || "",
-          courseName: currentSyllabus.extractedData.courseName || "",
-          instructor: currentSyllabus.extractedData.instructor || "",
-        });
-        
-        const todosWithIds = (currentSyllabus.extractedData.todos || []).map((todo, index) => ({
-          ...todo,
-          id: todo.id || index + 1
-        }));
-        
-        setDeadlines(todosWithIds);
-      }
-    }
-  }, [syllabusId, syllabi]);
-
-  const handleCourseSelect = (selectedCourse: Course) => {
-    setCourseData({
-      ...courseData,
-      courseCode: selectedCourse.courseCode,
-      courseName: selectedCourse.courseName,
-    });
-    setOpen(false);
-    setSearchQuery("");
-    setSearchResults([]);
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setCourseData({
-      ...courseData,
-      [field]: value,
-    });
-  };
-
-  // Updated to work with the correct field names
-  const handleDeadlineChange = (id: string | number, field: string, value: string) => {
-    setDeadlines(
-      deadlines.map((deadline) => {
-        if (deadline.id === id) {
-          if (field === "dueDate") {
-            return {
-              ...deadline,
-              date: new Date(value).toISOString()
-            };
-          }
-          
-          return { ...deadline, [field]: value };
-        }
-        return deadline;
-      })
-    );
-  };
+  
+  const {
+    syllabus,
+    totalSyllabi,
+    courseData,
+    deadlines,
+    searchResults,
+    instructorResults,
+    loading,
+    error,
+    notification,
+    searchQuery,
+    instructorQuery,
+    instructorOpen,
+    instructors,
+    setSearchQuery,
+    setInstructorQuery,
+    handleCourseInputChange,
+    handleDeadlineChange,
+    handleAddDeadline,
+    handleRemoveDeadline,
+    handleCourseSelect,
+    handleInstructorSelect,
+    saveCourseAndDeadlines,
+    setNotification,
+    setInstructorOpen,
+  } = useReviewData(syllabusId);
 
   // Function to scroll to the bottom of the deadlines container
   const scrollToBottom = () => {
@@ -299,76 +85,18 @@ export default function SyllabusReviewPage() {
     }
   };
 
-   // Function to add a new deadline and scroll to it
-   const handleAddDeadline = () => {
-    const newId =
-      deadlines.length > 0
-        ? Math.max(...deadlines.map((d) => d.id || 0)) + 1
-        : 1;
-    setDeadlines([
-      ...deadlines,
-      {
-        id: newId,
-        title: "New Deadline",
-        date: new Date().toISOString(),
-        eventType: "assignment",
-        priority: 3
-      },
-    ]);
-    
+  // Function to add a new deadline and scroll to it
+  const handleAddDeadlineAndScroll = () => {
+    handleAddDeadline();
     // Scroll to the bottom after the state updates and component re-renders
     setTimeout(scrollToBottom, 100);
   };
 
   const handleNext = async () => {
-    try {
-      setIsLoading(true);
-      setNotification(null);
-      
-      for (const deadline of deadlines) {
-        const todoData: Todo = {
-          userId: "",
-          courseCode: courseData.courseCode,
-          title: deadline.title,
-          date: Timestamp.fromDate(new Date(deadline.date)),
-          eventType: deadline.eventType,
-          priority: deadline.priority,
-        };
-        
-        if (!todoData.title || !todoData.date || !todoData.eventType || !todoData.courseCode) {
-          console.warn('Skipping incomplete todo:', todoData);
-          continue;
-        }
-        
-        await apiService.addTodo(todoData);
-      }
-      
-      setDeadlines([]);
-      
-      const result = await apiService.addCourse(courseData.courseCode);
-      
-      if (result && result.error) {
-        if (result.status === 400 && result.message === "Course already added") {
-          setNotification({
-            type: 'error',
-            message: 'This course has already been added to your account.'
-          });
-        } else {
-          setNotification({
-            type: 'error',
-            message: result.message || 'Failed to add course'
-          });
-          setIsLoading(false);
-          return;
-        }
-      } else {
-        setNotification({
-          type: 'success',
-          message: 'Course added successfully!'
-        });
-      }
-      
-      // Proceed to next page after a short delay (regardless of whether the course was added or was already there)
+    const success = await saveCourseAndDeadlines();
+    
+    if (success) {
+      // Proceed to next page after a short delay
       setTimeout(() => {
         if (syllabusId < totalSyllabi) {
           router.push(`/onboarding/review/${syllabusId + 1}`);
@@ -376,14 +104,6 @@ export default function SyllabusReviewPage() {
           router.push("/dashboard");
         }
       }, 1500);
-    } catch (error) {
-      console.error("Error saving deadlines:", error);
-      setNotification({
-        type: 'error',
-        message: "Failed to save deadlines. Please try again."
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -408,7 +128,7 @@ export default function SyllabusReviewPage() {
   };
 
   // Show loading state
-  if (isLoading) {
+  if (loading.syllabi) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         Loading...
@@ -421,7 +141,7 @@ export default function SyllabusReviewPage() {
     return (
       <div className="flex min-h-screen items-center justify-center flex-col">
         <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={() => setError(null)}>Retry</Button>
+        <Button onClick={() => setNotification(null)}>Retry</Button>
       </div>
     );
   }
@@ -496,12 +216,12 @@ export default function SyllabusReviewPage() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="courseCode">Course Code</Label>
-                      <Popover open={open} onOpenChange={setOpen}>
+                      <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             role="combobox"
-                            aria-expanded={open}
+                            aria-expanded={true}
                             className="w-full justify-between"
                           >
                             {courseData.courseCode || "Select course code..."}
@@ -516,7 +236,7 @@ export default function SyllabusReviewPage() {
                               onValueChange={setSearchQuery}
                             />
                             <CommandList>
-                              {isSearching ? (
+                              {loading.courses ? (
                                 <CommandItem disabled>Searching...</CommandItem>
                               ) : searchQuery.length < 2 ? (
                                 <CommandItem disabled>
@@ -526,7 +246,7 @@ export default function SyllabusReviewPage() {
                                 <CommandEmpty>No courses found</CommandEmpty>
                               ) : (
                                 <CommandGroup className="max-h-60 overflow-y-auto">
-                                  {searchResults.map((course) => (
+                                  {searchResults.map((course: Course) => (
                                     <CommandItem
                                       key={course.id}
                                       value={course.courseCode}
@@ -559,71 +279,62 @@ export default function SyllabusReviewPage() {
                         id="courseName"
                         value={courseData.courseName}
                         onChange={(e) =>
-                          handleInputChange("courseName", e.target.value)
+                          handleCourseInputChange("courseName", e.target.value)
                         }
                         placeholder="Course name"
                       />
                     </div>
 
-                    {/* Replace the instructor input field with this dropdown implementation */}
+                    {/* Instructor dropdown */}
                     <div className="space-y-2">
-                      <Label htmlFor="instructor">Instructor</Label>
-                      <Popover
-                        open={instructorOpen}
-                        onOpenChange={setInstructorOpen}
-                      >
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={instructorOpen}
-                            className="w-full justify-between"
-                          >
-                            {courseData.instructor || "Select instructor..."}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
-                          <Command>
-                            <CommandInput
-                              placeholder="Search instructors..."
-                              value={instructorQuery}
-                              onValueChange={setInstructorQuery}
-                            />
-                            <CommandList>
-                              {instructors.length === 0 ? (
-                                <CommandEmpty>No instructors found.</CommandEmpty>
-                              ) : (
-                                <CommandGroup className="max-h-60 overflow-y-auto">
-                                  {instructors.map((instructor) => (
-                                    <CommandItem
-                                      key={instructor}
-                                      value={instructor}
-                                      onSelect={() => {
-                                        handleInputChange(
-                                          "instructor",
-                                          instructor
-                                        );
-                                        setInstructorOpen(false);
-                                      }}
-                                    >
-                                      <Check
-                                        className={`mr-2 h-4 w-4 ${
-                                          courseData.instructor === instructor
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        }`}
-                                      />
-                                      {instructor}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              )}
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+  <Label htmlFor="instructor">Instructor</Label>
+  <Popover 
+    open={instructorOpen}
+    onOpenChange={setInstructorOpen}
+  >
+    <PopoverTrigger asChild>
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={instructorOpen}
+        className="w-full justify-between"
+      >
+        {courseData.instructor || "Select instructor..."}
+        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent className="w-full p-0">
+      <Command>
+        <CommandList>
+          {loading.instructors ? (
+            <CommandItem disabled>Loading instructors...</CommandItem>
+          ) : instructors.length === 0 ? (
+            <CommandEmpty>No instructors available</CommandEmpty>
+          ) : (
+            <CommandGroup className="max-h-60 overflow-y-auto">
+              {instructors.map((instructor) => (
+                <CommandItem
+                  key={instructor}
+                  value={instructor}
+                  onSelect={() => handleInstructorSelect(instructor)}
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${
+                      courseData.instructor === instructor
+                        ? "opacity-100"
+                        : "opacity-0"
+                    }`}
+                  />
+                  {instructor}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  </Popover>
+</div>
                   </div>
                 </CardContent>
               </Card>
@@ -635,8 +346,9 @@ export default function SyllabusReviewPage() {
                     <h2 className="text-lg font-semibold">Deadlines</h2>
                     <Button
                       size="sm"
-                      onClick={() => handleAddDeadline()}
+                      onClick={handleAddDeadlineAndScroll}
                       className="bg-rose-500 hover:bg-rose-600"
+                      disabled={loading.saving}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Deadline
@@ -658,11 +370,8 @@ export default function SyllabusReviewPage() {
                             variant="ghost"
                             size="icon"
                             className="absolute top-2 right-2 h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-100"
-                            onClick={() =>
-                              setDeadlines(
-                                deadlines.filter((d) => d.id !== deadline.id)
-                              )
-                            }
+                            onClick={() => handleRemoveDeadline(Number(deadline.id))}
+                            disabled={loading.saving}
                           >
                             <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Delete deadline</span>
@@ -683,6 +392,7 @@ export default function SyllabusReviewPage() {
                                 )
                               }
                               placeholder="Deadline title"
+                              disabled={loading.saving}
                             />
                           </div>
 
@@ -695,6 +405,7 @@ export default function SyllabusReviewPage() {
                               onValueChange={(value) =>
                                 handleDeadlineChange(deadline.id || 0, "eventType", value)
                               }
+                              disabled={loading.saving}
                             >
                               <SelectTrigger
                                 id={`deadline-type-${deadline.id}`}
@@ -724,6 +435,7 @@ export default function SyllabusReviewPage() {
                                   variant="outline"
                                   className="w-full justify-start text-left font-normal"
                                   id={`deadline-date-${deadline.id}`}
+                                  disabled={loading.saving}
                                 >
                                   <Calendar className="mr-2 h-4 w-4" />
                                   {deadline.date ? (
@@ -759,6 +471,7 @@ export default function SyllabusReviewPage() {
                               onValueChange={(value) =>
                                 handleDeadlineChange(deadline.id || 0, "priority", value)
                               }
+                              disabled={loading.saving}
                             >
                               <SelectTrigger
                                 id={`deadline-priority-${deadline.id}`}
@@ -784,7 +497,7 @@ export default function SyllabusReviewPage() {
               <Button
                 variant="outline"
                 onClick={handlePrevious}
-                disabled={syllabusId <= 1}
+                disabled={syllabusId <= 1 || loading.saving}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
@@ -793,8 +506,11 @@ export default function SyllabusReviewPage() {
               <Button
                 onClick={handleNext}
                 className="bg-rose-500 hover:bg-rose-600"
+                disabled={loading.saving}
               >
-                {syllabusId < totalSyllabi ? (
+                {loading.saving ? (
+                  "Saving..."
+                ) : syllabusId < totalSyllabi ? (
                   <>
                     Next
                     <ArrowRight className="ml-2 h-4 w-4" />
