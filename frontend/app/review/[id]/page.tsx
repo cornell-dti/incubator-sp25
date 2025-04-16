@@ -64,7 +64,7 @@ export default function SyllabusReviewPage() {
     if (success) {
       setTimeout(() => {
         if (syllabusId < totalSyllabi) {
-          router.push(`/onboarding/review/${syllabusId + 1}`);
+          router.push(`/review/${syllabusId + 1}`);
         } else {
           router.push("/dashboard");
         }
@@ -74,7 +74,7 @@ export default function SyllabusReviewPage() {
 
   const handlePrevious = () => {
     if (syllabusId > 1) {
-      router.push(`/onboarding/review/${syllabusId - 1}`);
+      router.push(`/review/${syllabusId - 1}`);
     }
   };
 

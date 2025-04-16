@@ -84,7 +84,7 @@ export default function OnboardingPage() {
       // Navigate to the first syllabus review page
       setTimeout(() => {
         setUploading(false);
-        router.push("/onboarding/review/1");
+        router.push("/review/1");
       }, 500);
     } catch (error) {
       console.error("Error processing files:", error);

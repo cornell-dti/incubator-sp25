@@ -93,7 +93,7 @@ export function SyllabusUploader({ onUploaded }: SyllabusUploaderProps) {
         } else {
           setUploaded(true);
           // Or navigate to review page
-          router.push("/onboarding/review/1");
+          router.push("/review/1");
         }
       }, 500);
     } catch (error) {
@@ -167,7 +167,7 @@ export function SyllabusUploader({ onUploaded }: SyllabusUploaderProps) {
           </div>
           <Button
             className="w-full"
-            onClick={() => router.push("/onboarding/review/1")}
+            onClick={() => router.push("/review/1")}
           >
             <Calendar className="mr-2 h-4 w-4" />
             Review Syllabus
