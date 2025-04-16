@@ -24,9 +24,15 @@ export const courseController: CourseRequestHandlers = {
   getCourseByCode: async (req, res) => {
     try {
       const courseCode = req.params.code;
+
+      // clean courseCode by adding space between letters and numbers and uppercase all letters
+      const cleanedCourseCode = courseCode
+        .replace(/([a-zA-Z])(\d)/g, "$1 $2")
+        .toUpperCase();
+
       const courseRef = db
         .collection("courses")
-        .where("courseCode", "==", courseCode);
+        .where("courseCode", "==", cleanedCourseCode);
       const courseSnapshot = await courseRef.get();
       const courseDoc = courseSnapshot.docs[0];
 

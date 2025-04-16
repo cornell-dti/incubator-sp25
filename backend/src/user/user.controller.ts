@@ -127,6 +127,12 @@ export const userController: UserRequestHandlers = {
   addCourse: async (req, res) => {
     try {
       const courseCode = req.params.courseCode;
+
+      // clean the courseCode
+      const cleanedCourseCode = courseCode
+        .replace(/([a-zA-Z])(\d)/g, "$1 $2")
+        .toUpperCase();
+
       const userId = req.user?.uid;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -140,14 +146,9 @@ export const userController: UserRequestHandlers = {
       const userData = userDoc.data() as User;
       const courses: Course[] = userData.courses || [];
 
-      // Check if courseCode is provided
-      if (!courseCode) {
-        return res.status(400).json({ error: "Course code is required" });
-      }
-
       const courseQuerySnapshot = await db
         .collection("courses")
-        .where("courseCode", "==", courseCode)
+        .where("courseCode", "==", cleanedCourseCode)
         .limit(1)
         .get();
 
