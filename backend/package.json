@@ -8,7 +8,8 @@
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "import": "ts-node src/scripts/import.ts"
+    "import": "ts-node src/scripts/import.ts",
+    "seed": "ts-node src/scripts/seed.ts"
   },
   "keywords": [],
   "author": "",

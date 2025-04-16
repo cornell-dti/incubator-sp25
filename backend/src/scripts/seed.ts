@@ -34,14 +34,14 @@ async function seedUserCourses(userId: string) {
         sections: [
           {
             sectionId: "001",
-            instructor: "Joe Halpern, Eva Tardos, Joe Halpern, Eva Tardos",
+            instructor: "Joe Halpern, Eva Tardos",
           },
         ],
         id: "D67uR24KqWRMM8G9rQaG",
       },
     ];
 
-    // Update user document - clear existing courses and add new ones
+    // Update the user's courses
     await userRef.update({
       courses: newCourses,
       updatedAt: Timestamp.now(),
@@ -70,35 +70,42 @@ async function seedUserTodos(userId: string) {
       process.exit(1);
     }
 
-    // Define example todos with different dates
+    // Helper function to add days to current date
+    const addDays = (days: number): Date => {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return date;
+    };
+
+    // Define example todos with relative dates
     const todos = [
       {
         userId: userId,
         courseCode: "CS 1110",
         title: "Complete Lab Assignment #3",
-        date: Timestamp.fromDate(new Date(2025, 3, 20)), // April 20, 2025
-        eventType: "assignment",
+        date: Timestamp.fromDate(addDays(5)),
+        eventType: "Assignment",
       },
       {
         userId: userId,
         courseCode: "CS 1110",
-        title: "Midterm Exam",
-        date: Timestamp.fromDate(new Date(2025, 4, 5)), // May 5, 2025
-        eventType: "exam",
+        title: "Submit Project Proposal",
+        date: Timestamp.fromDate(addDays(14)),
+        eventType: "Assignment",
       },
       {
         userId: userId,
         courseCode: "CS 2800",
         title: "Problem Set 2 Due",
-        date: Timestamp.fromDate(new Date(2025, 3, 25)), // April 25, 2025
-        eventType: "assignment",
+        date: Timestamp.fromDate(addDays(10)),
+        eventType: "Assignment",
       },
       {
         userId: userId,
         courseCode: "CS 2800",
         title: "Group Project Presentation",
-        date: Timestamp.fromDate(new Date(2025, 5, 10)), // June 10, 2025
-        eventType: "presentation",
+        date: Timestamp.fromDate(addDays(30)),
+        eventType: "Presentation",
       },
     ];
 
