@@ -1,3 +1,4 @@
+import { todo } from "node:test";
 import { db } from "../config/firebase";
 import { Todo } from "../types";
 import { TodoRequestHandlers } from "../types/requests";
@@ -43,6 +44,12 @@ export const todoController: TodoRequestHandlers = {
       }
 
       todoData.userId = userId;
+
+      // clean the courseCode
+      const cleanedCourseCode = todoData.courseCode
+        .replace(/([a-zA-Z])(\d)/g, "$1 $2")
+        .toUpperCase();
+      todoData.courseCode = cleanedCourseCode;
 
       const docRef = await db.collection("todos").add(todoData);
 
