@@ -2,47 +2,17 @@
 
 import { useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Calendar,
-  Check,
-  ChevronDown,
-  FileText,
-  Plus,
-  Trash2,
-} from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { format } from "date-fns";
 import { AuthGuard } from "@/components/AuthGuard";
-import { ErrorNotification } from "@/components/error-notification";
 import { useReviewData } from "@/hooks/use-review-data";
-import { Course } from "@/@types";
+import { ErrorNotification } from "@/components/error-notification";
+
+import Header from "@/components/review/header";
+import PageTitle from "@/components/review/page-title";
+import SyllabusPreview from "@/components/review/syllabus-preview";
+import CourseInformation from "@/components/review/course-info";
+import Deadlines from "@/components/review/deadline";
+import Navigation from "@/components/review/navigation";
 
 export default function SyllabusReviewPage() {
   const router = useRouter();
@@ -56,16 +26,13 @@ export default function SyllabusReviewPage() {
     courseData,
     deadlines,
     searchResults,
-    instructorResults,
     loading,
     error,
     notification,
     searchQuery,
-    instructorQuery,
     instructorOpen,
     instructors,
     setSearchQuery,
-    setInstructorQuery,
     handleCourseInputChange,
     handleDeadlineChange,
     handleAddDeadline,
@@ -77,7 +44,7 @@ export default function SyllabusReviewPage() {
     setInstructorOpen,
   } = useReviewData(syllabusId);
 
-  // Function to scroll to the bottom of the deadlines container
+  // Helper function to scroll to the bottom of deadlines container
   const scrollToBottom = () => {
     if (deadlinesContainerRef.current) {
       const container = deadlinesContainerRef.current;
@@ -85,10 +52,9 @@ export default function SyllabusReviewPage() {
     }
   };
 
-  // Function to add a new deadline and scroll to it
+  // Add deadline and scroll to it
   const handleAddDeadlineAndScroll = () => {
     handleAddDeadline();
-    // Scroll to the bottom after the state updates and component re-renders
     setTimeout(scrollToBottom, 100);
   };
 
@@ -96,7 +62,6 @@ export default function SyllabusReviewPage() {
     const success = await saveCourseAndDeadlines();
     
     if (success) {
-      // Proceed to next page after a short delay
       setTimeout(() => {
         if (syllabusId < totalSyllabi) {
           router.push(`/onboarding/review/${syllabusId + 1}`);
@@ -113,7 +78,7 @@ export default function SyllabusReviewPage() {
     }
   };
 
-  // Map eventType to UI-friendly type
+  // Map eventType to UI-friendly display names
   const getEventTypeDisplayName = (eventType: string): string => {
     const typeMap: Record<string, string> = {
       "readings": "Reading",
@@ -127,7 +92,7 @@ export default function SyllabusReviewPage() {
     return typeMap[eventType] || eventType.charAt(0).toUpperCase() + eventType.slice(1);
   };
 
-  // Show loading state
+  // Loading state
   if (loading.syllabi) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -136,7 +101,7 @@ export default function SyllabusReviewPage() {
     );
   }
 
-  // Show error state
+  // Error state
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center flex-col">
@@ -157,19 +122,7 @@ export default function SyllabusReviewPage() {
   return (
     <AuthGuard>
       <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-16 items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-6 w-6 text-rose-500" />
-              <span className="font-bold">SyllabusSync</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">
-                Syllabus {syllabusId} of {totalSyllabi}
-              </span>
-            </div>
-          </div>
-        </header>
+        <Header syllabusId={syllabusId} totalSyllabi={totalSyllabi} />
 
         <main className="flex-1 py-6">
           <div className="container px-4 md:px-6">
@@ -183,346 +136,47 @@ export default function SyllabusReviewPage() {
               </div>
             )}
 
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold">
-                Review Syllabus: {syllabus.extractedData?.courseCode || "Unknown Course"}
-              </h1>
-              <p className="text-muted-foreground">
-                Review and edit the extracted information from your syllabus
-              </p>
-            </div>
+            <PageTitle 
+              courseCode={syllabus.extractedData?.courseCode} 
+            />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {/* Syllabus Preview */}
-              <Card className="lg:col-span-1">
-                <CardContent className="p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Syllabus Preview</h2>
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="h-[70vh] overflow-y-auto border rounded-md p-4 bg-muted/30 font-mono text-sm whitespace-pre-wrap">
-                    {syllabus.parsedContent || "No content available"}
-                  </div>
-                </CardContent>
-              </Card>
+              <SyllabusPreview 
+                content={syllabus.parsedContent} 
+              />
+              
+              <CourseInformation
+                courseData={courseData}
+                searchQuery={searchQuery}
+                searchResults={searchResults}
+                loading={loading}
+                setSearchQuery={setSearchQuery}
+                handleCourseInputChange={handleCourseInputChange}
+                handleCourseSelect={handleCourseSelect}
+                instructorOpen={instructorOpen}
+                setInstructorOpen={setInstructorOpen}
+                instructors={instructors}
+                handleInstructorSelect={handleInstructorSelect}
+              />
 
-              {/* Course Information */}
-              <Card className="lg:col-span-1">
-                <CardContent className="p-4">
-                  <h2 className="text-lg font-semibold mb-4">
-                    Course Information
-                  </h2>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="courseCode">Course Code</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={true}
-                            className="w-full justify-between"
-                          >
-                            {courseData.courseCode || "Select course code..."}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
-                          <Command>
-                            <CommandInput
-                              placeholder="Search Cornell courses..."
-                              value={searchQuery}
-                              onValueChange={setSearchQuery}
-                            />
-                            <CommandList>
-                              {loading.courses ? (
-                                <CommandItem disabled>Searching...</CommandItem>
-                              ) : searchQuery.length < 2 ? (
-                                <CommandItem disabled>
-                                  Type at least 2 characters to search
-                                </CommandItem>
-                              ) : searchResults.length === 0 ? (
-                                <CommandEmpty>No courses found</CommandEmpty>
-                              ) : (
-                                <CommandGroup className="max-h-60 overflow-y-auto">
-                                  {searchResults.map((course: Course) => (
-                                    <CommandItem
-                                      key={course.id}
-                                      value={course.courseCode}
-                                      onSelect={() =>
-                                        handleCourseSelect(course)
-                                      }
-                                    >
-                                      <Check
-                                        className={`mr-2 h-4 w-4 ${
-                                          courseData.courseCode ===
-                                          course.courseCode
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        }`}
-                                      />
-                                      {course.courseCode} - {course.courseName}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              )}
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="courseName">Course Name</Label>
-                      <Input
-                        id="courseName"
-                        value={courseData.courseName}
-                        onChange={(e) =>
-                          handleCourseInputChange("courseName", e.target.value)
-                        }
-                        placeholder="Course name"
-                      />
-                    </div>
-
-                    {/* Instructor dropdown */}
-                    <div className="space-y-2">
-  <Label htmlFor="instructor">Instructor</Label>
-  <Popover 
-    open={instructorOpen}
-    onOpenChange={setInstructorOpen}
-  >
-    <PopoverTrigger asChild>
-      <Button
-        variant="outline"
-        role="combobox"
-        aria-expanded={instructorOpen}
-        className="w-full justify-between"
-      >
-        {courseData.instructor || "Select instructor..."}
-        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent className="w-full p-0">
-      <Command>
-        <CommandList>
-          {loading.instructors ? (
-            <CommandItem disabled>Loading instructors...</CommandItem>
-          ) : instructors.length === 0 ? (
-            <CommandEmpty>No instructors available</CommandEmpty>
-          ) : (
-            <CommandGroup className="max-h-60 overflow-y-auto">
-              {instructors.map((instructor) => (
-                <CommandItem
-                  key={instructor}
-                  value={instructor}
-                  onSelect={() => handleInstructorSelect(instructor)}
-                >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      courseData.instructor === instructor
-                        ? "opacity-100"
-                        : "opacity-0"
-                    }`}
-                  />
-                  {instructor}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
-</div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Deadlines */}
-              <Card className="lg:col-span-1">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold">Deadlines</h2>
-                    <Button
-                      size="sm"
-                      onClick={handleAddDeadlineAndScroll}
-                      className="bg-rose-500 hover:bg-rose-600"
-                      disabled={loading.saving}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Deadline
-                    </Button>
-                  </div>
-
-                  <div ref={deadlinesContainerRef} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                    {deadlines.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-4">
-                        No deadlines found in this syllabus
-                      </p>
-                    ) : (
-                      deadlines.map((deadline) => (
-                        <div
-                          key={deadline.id}
-                          className="border rounded-md p-3 space-y-2 relative"
-                        >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-100"
-                            onClick={() => handleRemoveDeadline(Number(deadline.id))}
-                            disabled={loading.saving}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete deadline</span>
-                          </Button>
-
-                          <div className="space-y-2">
-                            <Label htmlFor={`deadline-title-${deadline.id}`}>
-                              Title
-                            </Label>
-                            <Input
-                              id={`deadline-title-${deadline.id}`}
-                              value={deadline.title}
-                              onChange={(e) =>
-                                handleDeadlineChange(
-                                  deadline.id || 0,
-                                  "title",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Deadline title"
-                              disabled={loading.saving}
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor={`deadline-type-${deadline.id}`}>
-                              Type
-                            </Label>
-                            <Select
-                              value={deadline.eventType}
-                              onValueChange={(value) =>
-                                handleDeadlineChange(deadline.id || 0, "eventType", value)
-                              }
-                              disabled={loading.saving}
-                            >
-                              <SelectTrigger
-                                id={`deadline-type-${deadline.id}`}
-                              >
-                                <SelectValue placeholder="Select type">
-                                  {getEventTypeDisplayName(deadline.eventType)}
-                                </SelectValue>
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="readings">Reading</SelectItem>
-                                <SelectItem value="assignments">Assignment</SelectItem>
-                                <SelectItem value="exams">Exam</SelectItem>
-                                <SelectItem value="projects">Project</SelectItem>
-                                <SelectItem value="presentations">Presentation</SelectItem>
-                                <SelectItem value="memos">Memo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor={`deadline-date-${deadline.id}`}>
-                              Due Date
-                            </Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className="w-full justify-start text-left font-normal"
-                                  id={`deadline-date-${deadline.id}`}
-                                  disabled={loading.saving}
-                                >
-                                  <Calendar className="mr-2 h-4 w-4" />
-                                  {deadline.date ? (
-                                    format(new Date(deadline.date), "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <CalendarComponent
-                                  mode="single"
-                                  selected={deadline.date ? new Date(deadline.date) : undefined}
-                                  onSelect={(date) =>
-                                    handleDeadlineChange(
-                                      deadline.id || 0,
-                                      "dueDate", // This is mapped to 'date' in handleDeadlineChange
-                                      date ? date.toISOString().split("T")[0] : ""
-                                    )
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor={`deadline-priority-${deadline.id}`}>
-                              Priority
-                            </Label>
-                            <Select
-                              value={deadline.priority.toString()}
-                              onValueChange={(value) =>
-                                handleDeadlineChange(deadline.id || 0, "priority", value)
-                              }
-                              disabled={loading.saving}
-                            >
-                              <SelectTrigger
-                                id={`deadline-priority-${deadline.id}`}
-                              >
-                                <SelectValue placeholder="Select priority" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="1">High</SelectItem>
-                                <SelectItem value="2">Medium</SelectItem>
-                                <SelectItem value="3">Low</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <Deadlines
+                deadlines={deadlines}
+                handleAddDeadline={handleAddDeadlineAndScroll}
+                handleRemoveDeadline={handleRemoveDeadline}
+                handleDeadlineChange={handleDeadlineChange}
+                loading={loading}
+                getEventTypeDisplayName={getEventTypeDisplayName}
+                deadlinesContainerRef={deadlinesContainerRef}
+              />
             </div>
 
-            <div className="mt-8 flex justify-between">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={syllabusId <= 1 || loading.saving}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-
-              <Button
-                onClick={handleNext}
-                className="bg-rose-500 hover:bg-rose-600"
-                disabled={loading.saving}
-              >
-                {loading.saving ? (
-                  "Saving..."
-                ) : syllabusId < totalSyllabi ? (
-                  <>
-                    Next
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    Finish
-                    <Check className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
+            <Navigation
+              syllabusId={syllabusId}
+              totalSyllabi={totalSyllabi}
+              handlePrevious={handlePrevious}
+              handleNext={handleNext}
+              loading={loading}
+            />
           </div>
         </main>
       </div>
