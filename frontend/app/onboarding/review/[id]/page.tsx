@@ -45,6 +45,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { createApiService } from "@/lib/api";
 import { Todo } from "@/@types";
 import { Timestamp } from "firebase/firestore";
+import { ErrorNotification } from "@/components/error-notification";
 
 interface Section {
   sectionId: string;
@@ -96,6 +97,11 @@ export default function SyllabusReviewPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Add notification state for displaying errors, warnings, info messages, etc.
+  const [notification, setNotification] = useState<{
+    type: 'error' | 'warning' | 'info' | 'success';
+    message: string;
+  } | null>(null);
 
   // Add this state for the instructor dropdown
   const [instructorOpen, setInstructorOpen] = useState(false);
@@ -317,9 +323,10 @@ export default function SyllabusReviewPage() {
   const handleNext = async () => {
     try {
       setIsLoading(true);
+      setNotification(null);
       
       for (const deadline of deadlines) {
-        const todoData:Todo = {
+        const todoData: Todo = {
           userId: "",
           courseCode: courseData.courseCode,
           title: deadline.title,
@@ -335,18 +342,46 @@ export default function SyllabusReviewPage() {
         
         await apiService.addTodo(todoData);
       }
+      
       setDeadlines([]);
-      // add course
-      await apiService.addCourse(courseData.courseCode)
-
-      if (syllabusId < totalSyllabi) {
-        router.push(`/onboarding/review/${syllabusId + 1}`);
+      
+      const result = await apiService.addCourse(courseData.courseCode);
+      
+      if (result && result.error) {
+        if (result.status === 400 && result.message === "Course already added") {
+          setNotification({
+            type: 'error',
+            message: 'This course has already been added to your account.'
+          });
+        } else {
+          setNotification({
+            type: 'error',
+            message: result.message || 'Failed to add course'
+          });
+          setIsLoading(false);
+          return;
+        }
       } else {
-        router.push("/dashboard");
+        setNotification({
+          type: 'success',
+          message: 'Course added successfully!'
+        });
       }
+      
+      // Proceed to next page after a short delay (regardless of whether the course was added or was already there)
+      setTimeout(() => {
+        if (syllabusId < totalSyllabi) {
+          router.push(`/onboarding/review/${syllabusId + 1}`);
+        } else {
+          router.push("/dashboard");
+        }
+      }, 1500);
     } catch (error) {
       console.error("Error saving deadlines:", error);
-      setError("Failed to save deadlines. Please try again.");
+      setNotification({
+        type: 'error',
+        message: "Failed to save deadlines. Please try again."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -418,6 +453,16 @@ export default function SyllabusReviewPage() {
 
         <main className="flex-1 py-6">
           <div className="container px-4 md:px-6">
+            {notification && (
+              <div className="mb-4">
+                <ErrorNotification
+                  type={notification.type}
+                  message={notification.message}
+                  onDismiss={() => setNotification(null)}
+                />
+              </div>
+            )}
+
             <div className="mb-6">
               <h1 className="text-2xl font-bold">
                 Review Syllabus: {syllabus.extractedData?.courseCode || "Unknown Course"}

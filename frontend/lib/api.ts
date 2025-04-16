@@ -82,14 +82,21 @@ export const createApiService = () => {
       }
     },
 
-    addCourse: async (courseCode:string) => {
+    addCourse: async (courseCode: string) => {
       try {
         const headers = await getAuthHeaders();
         const response = await api.post(`/api/users/add-course/${courseCode}`, {}, {headers});
-        return response.data
+        return response.data;
       } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          return { 
+            error: true, 
+            message: error.response.data.error || "Failed to add course",
+            status: error.response.status 
+          };
+        }
         console.error("Error adding course:", error);
-        throw error;
+        return { error: true, message: "Unknown error occurred" };
       }
     },
 
