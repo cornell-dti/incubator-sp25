@@ -218,6 +218,31 @@ export function useReviewData(syllabusId: number) {
       setLoading(prev => ({ ...prev, saving: true }));
       setNotification(null);
       
+      const courseResult = await apiService.addCourse(courseData.courseCode);
+      
+      if (courseResult && courseResult.error) {
+        if (courseResult.status === 400 && courseResult.message === "Course already added") {
+          setNotification({
+            type: 'warning',
+            message: 'This course has already been added to your account.'
+          });
+          return false;
+        } else {
+          setNotification({
+            type: 'error',
+            message: courseResult.message || 'Failed to add course'
+          });
+          return false;
+        }
+      } else {
+        // Course added successfully
+        setNotification({
+          type: 'success',
+          message: 'Course added successfully!'
+        });
+      }
+      
+      // Now add the todos since the course was added (or was already added)
       for (const deadline of deadlines) {
         const todoData: Todo = {
           userId: "",
@@ -236,34 +261,12 @@ export function useReviewData(syllabusId: number) {
         await apiService.addTodo(todoData);
       }
       
-      const result = await apiService.addCourse(courseData.courseCode);
-      
-      if (result && result.error) {
-        if (result.status === 400 && result.message === "Course already added") {
-          setNotification({
-            type: 'error',
-            message: 'This course has already been added to your account.'
-          });
-        } else {
-          setNotification({
-            type: 'error',
-            message: result.message || 'Failed to add course'
-          });
-          return false;
-        }
-      } else {
-        setNotification({
-          type: 'success',
-          message: 'Course added successfully!'
-        });
-      }
-      
       return true;
     } catch (error) {
-      console.error("Error saving deadlines:", error);
+      console.error("Error saving course or deadlines:", error);
       setNotification({
         type: 'error',
-        message: "Failed to save deadlines. Please try again."
+        message: "Failed to save. Please try again."
       });
       return false;
     } finally {
