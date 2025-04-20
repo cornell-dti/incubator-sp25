@@ -82,21 +82,23 @@ export function DashboardOverview({
           <CardHeader>
             <CardTitle>Upcoming Deadlines</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-0">
             {loading.todos ? (
-              <div>Loading deadlines...</div>
+              <div className="px-6">Loading deadlines...</div>
             ) : upcomingDeadlines.length > 0 ? (
-              <div className="space-y-4">
-                {upcomingDeadlines.map((deadline) => (
-                  <DeadlineItem
-                    key={deadline.id}
-                    deadline={deadline}
-                    courses={courses}
-                  />
-                ))}
+              <div className="max-h-80 overflow-y-auto pr-2">
+                <div className="space-y-4 px-6">
+                  {upcomingDeadlines.map((deadline) => (
+                    <DeadlineItem
+                      key={deadline.id}
+                      deadline={deadline}
+                      courses={courses}
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
-              <div>No upcoming deadlines found.</div>
+              <div className="px-6">No upcoming deadlines found.</div>
             )}
           </CardContent>
         </Card>
