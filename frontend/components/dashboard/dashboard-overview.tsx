@@ -25,11 +25,17 @@ export function DashboardOverview({
   loading,
   onDataChange,
 }: DashboardOverviewProps) {
-  // Filter upcoming deadlines
-  const upcomingDeadlines = deadlines.filter((deadline) => {
+  // Filter and sort upcoming deadlines
+  const upcomingDeadlines = deadlines
+  .filter((deadline) => {
     const dueDate = timestampToDate(deadline.date);
     const today = new Date();
     return dueDate ? dueDate >= today : false;
+  })
+  .sort((a, b) => {
+    const dateA = timestampToDate(a.date);
+    const dateB = timestampToDate(b.date);
+    return dateA && dateB ? dateA.getTime() - dateB.getTime() : 0;
   });
 
   // Filter exams this month
