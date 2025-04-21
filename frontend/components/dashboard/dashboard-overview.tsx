@@ -25,11 +25,17 @@ export function DashboardOverview({
   loading,
   onDataChange,
 }: DashboardOverviewProps) {
-  // Filter upcoming deadlines
-  const upcomingDeadlines = deadlines.filter((deadline) => {
+  // Filter and sort upcoming deadlines
+  const upcomingDeadlines = deadlines
+  .filter((deadline) => {
     const dueDate = timestampToDate(deadline.date);
     const today = new Date();
     return dueDate ? dueDate >= today : false;
+  })
+  .sort((a, b) => {
+    const dateA = timestampToDate(a.date);
+    const dateB = timestampToDate(b.date);
+    return dateA && dateB ? dateA.getTime() - dateB.getTime() : 0;
   });
 
   // Filter exams this month
@@ -76,34 +82,38 @@ export function DashboardOverview({
           <CardHeader>
             <CardTitle>Upcoming Deadlines</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-0">
             {loading.todos ? (
-              <div>Loading deadlines...</div>
+              <div className="px-6">Loading deadlines...</div>
             ) : upcomingDeadlines.length > 0 ? (
-              <div className="space-y-4">
-                {upcomingDeadlines.map((deadline) => (
-                  <DeadlineItem
-                    key={deadline.id}
-                    deadline={deadline}
-                    courses={courses}
-                  />
-                ))}
+              <div className="max-h-80 overflow-y-auto pr-2">
+                <div className="space-y-4 px-6">
+                  {upcomingDeadlines.map((deadline) => (
+                    <DeadlineItem
+                      key={deadline.id}
+                      deadline={deadline}
+                      courses={courses}
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
-              <div>No upcoming deadlines found.</div>
+              <div className="px-6">No upcoming deadlines found.</div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="col-span-3">
+        <Card className="col-span-3 flex flex-col">
           <CardHeader>
             <CardTitle>Quick Upload</CardTitle>
             <CardDescription>
               Upload a new syllabus to extract deadlines
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <SyllabusUploader />
+          <CardContent className="flex-1 pb-6">
+            <div className="h-full min-h-48">
+              <SyllabusUploader />
+            </div>
           </CardContent>
         </Card>
       </div>
