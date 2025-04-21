@@ -11,7 +11,7 @@ import { DashboardDeadlines } from "@/components/dashboard/dashboard-deadlines";
 import { DashboardCourses } from "@/components/dashboard/dashboard-courses";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function DashboardPage() {
   const { courses, exams, todos, deadlines, loading, refreshData } =
@@ -26,9 +26,22 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (activeTab !== "deadlines") {
+      setSelectedCourseFilter(null);
+    }
+  }, [activeTab]);
+
   const handleViewCourseDeadlines = (courseCode: string) => {
     setSelectedCourseFilter(courseCode);
     setActiveTab("deadlines");
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value !== "deadlines") {
+      setSelectedCourseFilter(null);
+    }
+    setActiveTab(value);
   };
 
   return (
@@ -55,7 +68,7 @@ export default function DashboardPage() {
 
         <Tabs 
           value={activeTab} 
-          onValueChange={setActiveTab} 
+          onValueChange={handleTabChange} 
           className="space-y-4"
         >
           <TabsList>
