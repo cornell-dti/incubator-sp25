@@ -27,15 +27,17 @@ interface DashboardDeadlinesProps {
   courses: Course[];
   deadlines: Deadline[];
   loading: LoadingState;
+  initialCourseFilter?: string | null;
 }
 
 export function DashboardDeadlines({
   courses,
   deadlines,
   loading,
+  initialCourseFilter = null,
 }: DashboardDeadlinesProps) {
   // State for filters
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(initialCourseFilter);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [showUpcomingOnly, setShowUpcomingOnly] = useState(true);
 

@@ -10,7 +10,7 @@ interface CourseCardProps {
   onEditStart: () => void;
   onEditSave: () => void;
   onEditCancel: () => void;
-  onViewDeadlines: () => void;
+  onViewDeadlines: (courseCode: string) => void;
 }
 
 export function CourseCard({
@@ -90,7 +90,7 @@ export function CourseCard({
         </div>
 
         <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={onViewDeadlines}>
+          <Button variant="outline" size="sm" onClick={() => onViewDeadlines(course.courseCode)}>
             View Deadlines
           </Button>
         </div>

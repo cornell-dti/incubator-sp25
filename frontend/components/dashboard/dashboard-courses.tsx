@@ -7,12 +7,14 @@ interface DashboardCoursesProps {
   courses: Course[];
   loading: boolean;
   onCourseUpdate: () => void;
+  onViewCourseDeadlines: (courseCode: string) => void;
 }
 
 export function DashboardCourses({
   courses,
   loading,
   onCourseUpdate,
+  onViewCourseDeadlines,
 }: DashboardCoursesProps) {
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const router = useRouter();
@@ -35,18 +37,18 @@ export function DashboardCourses({
         <div>Loading courses...</div>
       ) : courses.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              isEditing={editingCourseId === course.id}
-              onEditStart={() => setEditingCourseId(course.id || null)}
-              onEditSave={handleEditSave}
-              onEditCancel={() => setEditingCourseId(null)}
-              onViewDeadlines={() => navigateToCourseDeadlines(course.id || "")}
-            />
-          ))}
-        </div>
+        {courses.map((course) => (
+          <CourseCard
+            key={course.id}
+            course={course}
+            isEditing={editingCourseId === course.id}
+            onEditStart={() => setEditingCourseId(course.id || null)}
+            onEditSave={handleEditSave}
+            onEditCancel={() => setEditingCourseId(null)}
+            onViewDeadlines={(courseCode) => onViewCourseDeadlines(courseCode)}
+          />
+        ))}
+      </div>
       ) : (
         <div>
           No courses found. Add a course or upload a syllabus to get started.
