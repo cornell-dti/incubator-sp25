@@ -103,15 +103,17 @@ export function DashboardOverview({
           </CardContent>
         </Card>
 
-        <Card className="col-span-3">
+        <Card className="col-span-3 flex flex-col">
           <CardHeader>
             <CardTitle>Quick Upload</CardTitle>
             <CardDescription>
               Upload a new syllabus to extract deadlines
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <SyllabusUploader />
+          <CardContent className="flex-1 pb-6">
+            <div className="h-full min-h-48">
+              <SyllabusUploader />
+            </div>
           </CardContent>
         </Card>
       </div>
