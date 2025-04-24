@@ -42,6 +42,7 @@ export default function SyllabusReviewPage() {
     saveCourseAndDeadlines,
     setNotification,
     setInstructorOpen,
+    skipCurrentSyllabus,
   } = useReviewData(syllabusId);
 
   // Helper function to scroll to the bottom of deadlines container
@@ -69,6 +70,23 @@ export default function SyllabusReviewPage() {
           router.push("/dashboard");
         }
       }, 1500);
+    }
+  };
+
+  const handleSkipCourse = async () => {
+    if (window.confirm("Are you sure you want to skip this course? It won't be added to your account.")) {
+      const success = skipCurrentSyllabus();
+      
+      if (success) {
+        // Navigate to next syllabus or dashboard
+        setTimeout(() => {
+          if (syllabusId < totalSyllabi) {
+            router.push(`/review/${syllabusId + 1}`);
+          } else {
+            router.push("/dashboard");
+          }
+        }, 1000);
+      }
     }
   };
 
@@ -175,6 +193,7 @@ export default function SyllabusReviewPage() {
               totalSyllabi={totalSyllabi}
               handlePrevious={handlePrevious}
               handleNext={handleNext}
+              handleSkip={handleSkipCourse}
               loading={loading}
             />
           </div>

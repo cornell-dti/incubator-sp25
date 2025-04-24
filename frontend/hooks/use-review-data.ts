@@ -341,6 +341,16 @@ export function useReviewData(syllabusId: number) {
     setInstructorOpen(false);
   };
 
+  const skipCurrentSyllabus = () => {
+    // Just mark as processed without saving anything
+    setNotification({
+      type: 'info',
+      message: 'Course skipped'
+    });
+    
+    return true;
+  };
+
   // Update search query
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -403,5 +413,6 @@ export function useReviewData(syllabusId: number) {
     saveCourseAndDeadlines,
     setNotification,
     setInstructorOpen,
+    skipCurrentSyllabus,
   };
 }
