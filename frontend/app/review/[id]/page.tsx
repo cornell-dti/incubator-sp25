@@ -110,8 +110,16 @@ export default function SyllabusReviewPage() {
     return typeMap[eventType] || eventType.charAt(0).toUpperCase() + eventType.slice(1);
   };
 
-  // Loading state
-  if (loading.syllabi) {
+
+  if (syllabusId > totalSyllabi) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        No more syllabi to review.
+      </div>
+    );
+  }
+
+  if (loading.syllabi || !syllabus?.id) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         Loading...
@@ -129,7 +137,7 @@ export default function SyllabusReviewPage() {
     );
   }
 
-  if (!syllabus || !syllabus.id) {
+  if (!loading.syllabi && (!syllabus || !syllabus.id)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         No syllabus found with ID: {syllabusId}
