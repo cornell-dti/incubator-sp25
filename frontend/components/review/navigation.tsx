@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface NavigationProps {
@@ -6,6 +6,7 @@ interface NavigationProps {
   totalSyllabi: number;
   handlePrevious: () => void;
   handleNext: () => void;
+  handleSkip: () => void;
   loading: {
     saving: boolean;
   };
@@ -16,6 +17,7 @@ const Navigation: React.FC<NavigationProps> = ({
   totalSyllabi,
   handlePrevious,
   handleNext,
+  handleSkip,
   loading,
 }) => {
   return (
@@ -27,6 +29,15 @@ const Navigation: React.FC<NavigationProps> = ({
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Previous
+      </Button>
+
+      <Button
+        variant="ghost"
+        onClick={handleSkip}
+        disabled={loading.saving}
+      >
+        <X className="mr-2 h-4 w-4" />
+        Skip
       </Button>
 
       <Button

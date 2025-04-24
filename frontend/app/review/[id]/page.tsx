@@ -42,6 +42,7 @@ export default function SyllabusReviewPage() {
     saveCourseAndDeadlines,
     setNotification,
     setInstructorOpen,
+    skipCurrentSyllabus,
   } = useReviewData(syllabusId);
 
   // Helper function to scroll to the bottom of deadlines container
@@ -72,6 +73,23 @@ export default function SyllabusReviewPage() {
     }
   };
 
+  const handleSkipCourse = async () => {
+    if (window.confirm("Are you sure you want to skip this course? It won't be added to your account.")) {
+      const success = skipCurrentSyllabus();
+      
+      if (success) {
+        // Navigate to next syllabus or dashboard
+        setTimeout(() => {
+          if (syllabusId < totalSyllabi) {
+            router.push(`/review/${syllabusId + 1}`);
+          } else {
+            router.push("/dashboard");
+          }
+        }, 1000);
+      }
+    }
+  };
+
   const handlePrevious = () => {
     if (syllabusId > 1) {
       router.push(`/review/${syllabusId - 1}`);
@@ -92,8 +110,16 @@ export default function SyllabusReviewPage() {
     return typeMap[eventType] || eventType.charAt(0).toUpperCase() + eventType.slice(1);
   };
 
-  // Loading state
-  if (loading.syllabi) {
+
+  if (syllabusId > totalSyllabi) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        No more syllabi to review.
+      </div>
+    );
+  }
+
+  if (loading.syllabi || !syllabus?.id) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         Loading...
@@ -111,7 +137,7 @@ export default function SyllabusReviewPage() {
     );
   }
 
-  if (!syllabus || !syllabus.id) {
+  if (!loading.syllabi && (!syllabus || !syllabus.id)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         No syllabus found with ID: {syllabusId}
@@ -175,6 +201,7 @@ export default function SyllabusReviewPage() {
               totalSyllabi={totalSyllabi}
               handlePrevious={handlePrevious}
               handleNext={handleNext}
+              handleSkip={handleSkipCourse}
               loading={loading}
             />
           </div>
