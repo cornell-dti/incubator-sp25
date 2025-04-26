@@ -106,17 +106,21 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async (): Promise<UserCredential> => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle verifying the token
-      return result;
-    } catch (error) {
+const signInWithGoogle = async (): Promise<UserCredential> => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    return result;
+  } catch (error: any) {
+    if (error.code === 'auth/popup-closed-by-user') {
+      console.log('Sign-in popup was closed by the user');
+      throw error;
+    } else {
       console.error("Error signing in with Google", error);
       throw error;
     }
-  };
+  }
+};
 
   const logout = async (): Promise<void> => {
     try {

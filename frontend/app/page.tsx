@@ -23,12 +23,9 @@ export default function Home() {
               </Link>
             </nav>
           </div>
-          <div className="ml-auto flex items-center space-x-4">
-            <Button variant="outline" asChild>
-              <Link href="/login">Login</Link>
-            </Button>
+          <div className="ml-auto flex items-center">
             <Button asChild>
-              <Link href="/signup">Sign Up</Link>
+              <Link href="/login">Sign in</Link>
             </Button>
           </div>
         </div>
@@ -48,9 +45,11 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button size="lg" className="bg-rose-500 hover:bg-rose-600">
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                  <Button size="lg" className="bg-rose-500 hover:bg-rose-600" asChild>
+                    <Link href="/login">
+                      Get Started
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                   <Button size="lg" variant="outline">
                     Learn More

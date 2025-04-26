@@ -5,17 +5,19 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Calendar, Upload } from "lucide-react";
+import { Calendar, Upload, LogOut } from "lucide-react";
 import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { DashboardDeadlines } from "@/components/dashboard/dashboard-deadlines";
 import { DashboardCourses } from "@/components/dashboard/dashboard-courses";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardPage() {
   const { courses, exams, todos, deadlines, loading, refreshData } =
     useDashboardData();
+  const { logout } = useAuth();
 
   // Function to handle redirect to onboarding page
   const router = useRouter();
@@ -44,6 +46,14 @@ export default function DashboardPage() {
     setActiveTab(value);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   return (
     <AuthGuard>
       <DashboardShell>
@@ -62,6 +72,14 @@ export default function DashboardPage() {
             <Button variant="outline">
               <Calendar className="mr-2 h-4 w-4" />
               Connect Calendar
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={handleLogout}
+              className="ml-2"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
             </Button>
           </div>
         </DashboardHeader>
