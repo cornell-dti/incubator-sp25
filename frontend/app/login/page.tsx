@@ -40,14 +40,18 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     if (isLoading) return;
-
+  
     setIsLoading(true);
     try {
       console.log("Starting Google sign-in process...");
       await signInWithGoogle();
-    } catch (error) {
-      console.error("Error during sign-in process:", error);
-      alert("Sign in failed. Please try again later.");
+    } catch (error: any) {      
+      if (error.code === 'auth/popup-closed-by-user') {
+        console.log('User closed the sign-in popup');
+      } else {
+        alert("Sign in failed. Please try again later.");
+      }
+      
       setIsLoading(false);
     }
   };
