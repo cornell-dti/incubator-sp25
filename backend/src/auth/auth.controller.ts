@@ -26,6 +26,7 @@ export const authController = {
           name: decodedToken.name || decodedToken.display_name || "User",
           courses: [],
           calendarLink: "",
+          taskListId: "",
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         };

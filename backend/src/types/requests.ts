@@ -65,4 +65,6 @@ export interface SearchRequestHandlers {
 
 export interface CalendarRequestHandlers {
   createExamEvent: RequestHandler<{ id: string }>;
+  createFinalDeliverableTask: RequestHandler<{ id: string }>;
+  createTask: RequestHandler<{ id: string }>;
 }

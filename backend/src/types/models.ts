@@ -6,6 +6,7 @@ export interface User {
   name: string;
   courses: Course[];
   calendarLink: string;
+  taskListId: string;
 
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
