@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
-import { User, Course, Todo, Exam } from "@/@types/models";
+import { User, Course, Todo, Exam, FinalDeliverable } from "@/@types/models";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -85,14 +85,18 @@ export const createApiService = () => {
     addCourse: async (courseCode: string) => {
       try {
         const headers = await getAuthHeaders();
-        const response = await api.post(`/api/users/add-course/${courseCode}`, {}, {headers});
+        const response = await api.post(
+          `/api/users/add-course/${courseCode}`,
+          {},
+          { headers }
+        );
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
-          return { 
-            error: true, 
+          return {
+            error: true,
             message: error.response.data.error || "Failed to add course",
-            status: error.response.status 
+            status: error.response.status,
           };
         }
         console.error("Error adding course:", error);
@@ -100,15 +104,56 @@ export const createApiService = () => {
       }
     },
 
-    addTodo: async (todoData : Todo) => {
+    addTodo: async (todoData: Todo) => {
       try {
         const headers = await getAuthHeaders();
-        const response = await api.post(`/api/todos/`, todoData, {headers});
-        return response.data
+        const response = await api.post(`/api/todos/`, todoData, { headers });
+        return response.data;
       } catch (error) {
         console.error("Error adding todos:", error);
         throw error;
       }
-    }
+    },
+
+    insertExam: async (exam: Exam) => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await api.post(`/api/calendar/add-exam`, exam.id, {
+          headers,
+        });
+        return response.data;
+      } catch (error) {
+        console.error("Error inserting exam:", error);
+        throw error;
+      }
+    },
+
+    insertDeliverable: async (deliverable: FinalDeliverable) => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await api.post(
+          `/api/calendar/add-deliverable`,
+          deliverable.id,
+          { headers }
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error inserting deliverable:", error);
+        throw error;
+      }
+    },
+
+    insertTask: async (todo: Todo) => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await api.post(`/api/calendar/add-task`, todo.id, {
+          headers,
+        });
+        return response.data;
+      } catch (error) {
+        console.error("Error inserting task:", error);
+        throw error;
+      }
+    },
   };
 };
