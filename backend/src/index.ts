@@ -7,6 +7,7 @@ import authRoutes from "./auth/auth.route";
 import searchRoutes from "./search/search.route";
 import todoRoutes from "./todo/todo.route";
 import examRoutes from "./exam/exam.route";
+import calendarRoutes from "./calendar/gcal.route";
 import cors from "cors";
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/todos", todoRoutes);
 app.use("/api/exams", examRoutes);
+app.use("/api/calendar", calendarRoutes);
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
