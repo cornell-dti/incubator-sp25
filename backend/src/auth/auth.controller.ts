@@ -25,6 +25,7 @@ export const authController = {
           email: decodedToken.email || "",
           name: decodedToken.name || decodedToken.display_name || "User",
           courses: [],
+          calendarLink: "",
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         };

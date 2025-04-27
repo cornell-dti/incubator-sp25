@@ -62,3 +62,7 @@ export interface SearchRequestHandlers {
   getCourseSearch: RequestHandler<{ query: string }>;
   getInstructorSearch: RequestHandler<{ query: string; courseCode: string }>;
 }
+
+export interface CalendarRequestHandlers {
+  createExamEvent: RequestHandler<{ id: string }>;
+}

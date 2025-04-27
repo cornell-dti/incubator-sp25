@@ -5,6 +5,7 @@ export interface User {
   email: string;
   name: string;
   courses: Course[];
+  calendarLink: string;
 
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
