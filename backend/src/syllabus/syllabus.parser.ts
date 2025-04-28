@@ -71,7 +71,7 @@ export const parseSyllabus = async (
           priority: 3,\
         },\
         {\
-          title: Study Ch 1,\
+          title: In-class prelim exam 1,\
           date: 2025-01-31T00:00:00Z,\
           eventType: Exam,\
           priority: 1,\
@@ -95,8 +95,9 @@ export const parseSyllabus = async (
       specific category (i.e. projects would be higher priority than assignments, \
       so project would have priority 1 and assignments would have priority 2).\n\
       \
-      Remember, for Exam information type, you only need to account for the in-class exams. \
-      If the exam is not in-class, then you just simply ignore it.",
+      Remember, for exams, you only need to extract the in-class exams. \
+      If the exam is not clearly mentioned to be in-class, then you view it as not in-class, \
+      and you simply ignore it.",
         },
         {
           role: "system",
