@@ -67,19 +67,19 @@ export const parseSyllabus = async (
         {\
           title: Complete Shakespeare Romeo & Juliet Ch 1,\
           date: 2025-01-01T00:00:00Z,\
-          eventType: assignment,\
+          eventType: Assignment,\
           priority: 3,\
         },\
         {\
-          title: Study Ch 1,\
+          title: In-class prelim exam 1,\
           date: 2025-01-31T00:00:00Z,\
-          eventType: exams,\
+          eventType: Exam,\
           priority: 1,\
         },\
         {\
           title: Complete final project,\
           date: 2025-05-01T00:00:00Z,\
-          eventType: projects,\
+          eventType: Project,\
           priority: 2,\
         }\
       ],\
@@ -93,7 +93,11 @@ export const parseSyllabus = async (
       todo is based on which category it falls under within the categories in gradingPolicy. \
       Please determine the priority of each task based on the weight given to the \
       specific category (i.e. projects would be higher priority than assignments, \
-      so project would have priority 1 and assignments would have priority 2).",
+      so project would have priority 1 and assignments would have priority 2).\n\
+      \
+      Remember, for exams, you only need to extract the in-class exams. \
+      If the exam is not clearly mentioned to be in-class, then you view it as not in-class, \
+      and you simply ignore it.",
         },
         {
           role: "system",
