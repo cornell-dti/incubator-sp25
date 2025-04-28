@@ -20,11 +20,55 @@ export function SyllabusUploader({ onUploaded }: SyllabusUploaderProps) {
   const [progress, setProgress] = useState(0);
   const [uploaded, setUploaded] = useState(false);
   const [error, setError] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       setError("");
+    }
+  };
+
+  // Handle drag events
+  const handleDragEnter = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const droppedFile = e.dataTransfer.files[0];
+      const validTypes = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+      ];
+
+      if (validTypes.includes(droppedFile.type)) {
+        setFile(droppedFile);
+        setError("");
+      } else {
+        setError("Please upload only PDF, DOCX, or TXT files.");
+      }
     }
   };
 
@@ -40,7 +84,6 @@ export function SyllabusUploader({ onUploaded }: SyllabusUploaderProps) {
       const formData = new FormData();
       formData.append("file", file);
 
-      // Send file to parsing endpoint
       const response = await axios.post(
         "http://localhost:3000/api/syllabi/parsed",
         formData,
@@ -50,12 +93,14 @@ export function SyllabusUploader({ onUploaded }: SyllabusUploaderProps) {
           },
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / (progressEvent.total || 0)
+              (progressEvent.loaded * 80) / (progressEvent.total || 0)
             );
-            setProgress(percentCompleted);
+            setProgress(Math.min(percentCompleted, 80));
           },
         }
       );
+
+      setProgress(99);
 
       // Get the parsed data
       const parsedData = response.data;
@@ -111,7 +156,15 @@ export function SyllabusUploader({ onUploaded }: SyllabusUploaderProps) {
           <div className="flex items-center justify-center flex-1 w-full">
             <label
               htmlFor="syllabus-upload"
-              className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted/70 border-muted-foreground/20"
+              className={`flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer ${
+                isDragging
+                  ? "bg-muted/70 border-primary"
+                  : "bg-muted/50 hover:bg-muted/70 border-muted-foreground/20"
+              }`}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
             >
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
                 <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
@@ -142,7 +195,11 @@ export function SyllabusUploader({ onUploaded }: SyllabusUploaderProps) {
                 <div className="space-y-2">
                   <Progress value={progress} className="h-2" />
                   <p className="text-xs text-muted-foreground">
-                    Uploading and parsing syllabus... {progress}%
+                    {progress < 80
+                      ? `Uploading syllabus... ${progress}%`
+                      : progress === 99
+                        ? "Processing syllabus... 99%"
+                        : `Finalizing... ${progress}%`}
                   </p>
                 </div>
               ) : (
@@ -165,10 +222,7 @@ export function SyllabusUploader({ onUploaded }: SyllabusUploaderProps) {
               Your syllabus has been processed and is ready for review.
             </p>
           </div>
-          <Button
-            className="w-full"
-            onClick={() => router.push("/review/1")}
-          >
+          <Button className="w-full" onClick={() => router.push("/review/1")}>
             <Calendar className="mr-2 h-4 w-4" />
             Review Syllabus
           </Button>
