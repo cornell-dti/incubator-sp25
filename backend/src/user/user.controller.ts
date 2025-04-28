@@ -116,6 +116,16 @@ export const userController: UserRequestHandlers = {
         return res.status(404).json({ error: "User not found" });
       }
 
+      // Delete all todos associated with the user
+      const todosSnapshot = await db
+        .collection("todos")
+        .where("userId", "==", id)
+        .get();
+      const deletePromises = todosSnapshot.docs.map((todoDoc) =>
+        db.collection("todos").doc(todoDoc.id).delete()
+      );
+      await Promise.all(deletePromises);
+
       await userRef.delete();
 
       res.status(200).json({ message: "User deleted successfully" });
