@@ -19,6 +19,18 @@ export function DeadlineItem({
     (c) => c.id === deadline.courseId || c.courseCode === deadline.courseCode
   );
   const courseCode = course ? course.courseCode : "Unknown";
+  // Clean up the title by removing potential duplicate course code
+  let cleanTitle = deadline.title;
+
+  // Remove the course code if it appears at the beginning of the title (with or without colon)
+  if (cleanTitle.startsWith(courseCode)) {
+    // Remove the course code and any following colon or space
+    cleanTitle = cleanTitle.substring(courseCode.length).trim();
+    // Remove leading colon or space if present
+    if (cleanTitle.startsWith(":") || cleanTitle.startsWith(" ")) {
+      cleanTitle = cleanTitle.substring(1).trim();
+    }
+  }
 
   return (
     <div className="flex items-center">
@@ -48,7 +60,8 @@ export function DeadlineItem({
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium leading-none">
-            {courseCode}: {deadline.title}
+            {courseCode}
+            {cleanTitle ? `: ${cleanTitle}` : ""}
           </p>
           <p className="text-sm text-muted-foreground">
             Due on {formatTimestamp(deadline.date, "short")}
