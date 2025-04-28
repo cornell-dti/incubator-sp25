@@ -53,7 +53,7 @@ export function useReviewData(syllabusId: number) {
   const [syllabus, setSyllabus] = useState<Partial<Syllabus>>({});
   const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
   const [totalSyllabi, setTotalSyllabi] = useState(0);
-  
+
   // State for course data
   const [courseData, setCourseData] = useState<CourseData>({
     courseCode: "",
@@ -61,7 +61,7 @@ export function useReviewData(syllabusId: number) {
     instructor: "",
   });
   const [deadlines, setDeadlines] = useState<TodoSimplified[]>([]);
-  
+
   // State for search functionality
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Course[]>([]);
@@ -70,7 +70,7 @@ export function useReviewData(syllabusId: number) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [instructors, setInstructors] = useState<string[]>([]);
   const [instructorOpen, setInstructorOpen] = useState(false);
-  
+
   // State for UI
   const [loading, setLoading] = useState<LoadingState>({
     syllabi: true,
@@ -80,14 +80,14 @@ export function useReviewData(syllabusId: number) {
   });
   const [error, setError] = useState<string | null>(null);
   const [notification, setNotification] = useState<{
-    type: 'error' | 'warning' | 'info' | 'success';
+    type: "error" | "warning" | "info" | "success";
     message: string;
   } | null>(null);
-  
+
   // Load syllabi from localStorage
   useEffect(() => {
     const loadSyllabi = () => {
-      setLoading(prev => ({ ...prev, syllabi: true }));
+      setLoading((prev) => ({ ...prev, syllabi: true }));
       try {
         const localSyllabi = localStorage.getItem("parsedSyllabi");
         if (localSyllabi !== null) {
@@ -99,7 +99,7 @@ export function useReviewData(syllabusId: number) {
         console.error("Error parsing syllabi from localStorage:", err);
         setError("Failed to load saved syllabi");
       } finally {
-        setLoading(prev => ({ ...prev, syllabi: false }));
+        setLoading((prev) => ({ ...prev, syllabi: false }));
       }
     };
 
@@ -112,19 +112,21 @@ export function useReviewData(syllabusId: number) {
       const currentSyllabus = syllabi.find((s) => s.id === syllabusId);
       if (currentSyllabus) {
         setSyllabus(currentSyllabus);
-        
+
         if (currentSyllabus.extractedData) {
           setCourseData({
             courseCode: currentSyllabus.extractedData.courseCode || "",
             courseName: currentSyllabus.extractedData.courseName || "",
             instructor: currentSyllabus.extractedData.instructor || "",
           });
-          
-          const todosWithIds = (currentSyllabus.extractedData.todos || []).map((todo, index) => ({
-            ...todo,
-            id: todo.id || index + 1
-          }));
-          
+
+          const todosWithIds = (currentSyllabus.extractedData.todos || []).map(
+            (todo, index) => ({
+              ...todo,
+              id: todo.id || index + 1,
+            })
+          );
+
           setDeadlines(todosWithIds);
         }
       }
@@ -137,7 +139,7 @@ export function useReviewData(syllabusId: number) {
 
   // Fetch all courses
   const fetchCourses = async () => {
-    setLoading(prev => ({ ...prev, courses: true }));
+    setLoading((prev) => ({ ...prev, courses: true }));
     try {
       const response = await axios.get("http://localhost:3000/api/courses");
       setCourses(response.data);
@@ -145,15 +147,15 @@ export function useReviewData(syllabusId: number) {
       console.error("Error fetching courses:", error);
       setError("Failed to fetch courses");
     } finally {
-      setLoading(prev => ({ ...prev, courses: false }));
+      setLoading((prev) => ({ ...prev, courses: false }));
     }
   };
 
   // Fetch instructors for a course
   const fetchInstructors = async () => {
     if (!courseData.courseCode) return;
-    
-    setLoading(prev => ({ ...prev, instructors: true }));
+
+    setLoading((prev) => ({ ...prev, instructors: true }));
     try {
       const response = await axios.get(
         `http://localhost:3000/api/courses/${courseData.courseCode}`
@@ -166,7 +168,7 @@ export function useReviewData(syllabusId: number) {
       console.error("Error fetching instructors:", error);
       setError("Failed to fetch instructors");
     } finally {
-      setLoading(prev => ({ ...prev, instructors: false }));
+      setLoading((prev) => ({ ...prev, instructors: false }));
     }
   };
 
@@ -177,7 +179,7 @@ export function useReviewData(syllabusId: number) {
       return;
     }
 
-    setLoading(prev => ({ ...prev, courses: true }));
+    setLoading((prev) => ({ ...prev, courses: true }));
     try {
       const response = await axios.get(
         `http://localhost:3000/api/search/${query}`
@@ -187,7 +189,7 @@ export function useReviewData(syllabusId: number) {
       console.error("Error searching courses:", error);
       setSearchResults([]);
     } finally {
-      setLoading(prev => ({ ...prev, courses: false }));
+      setLoading((prev) => ({ ...prev, courses: false }));
     }
   };
 
@@ -198,7 +200,7 @@ export function useReviewData(syllabusId: number) {
       return;
     }
 
-    setLoading(prev => ({ ...prev, instructors: true }));
+    setLoading((prev) => ({ ...prev, instructors: true }));
     try {
       const response = await axios.get(
         `http://localhost:3000/api/search/instructor/${courseData.courseCode}/${query}`
@@ -208,40 +210,43 @@ export function useReviewData(syllabusId: number) {
       console.error("Error searching instructors:", error);
       setInstructorResults([]);
     } finally {
-      setLoading(prev => ({ ...prev, instructors: false }));
+      setLoading((prev) => ({ ...prev, instructors: false }));
     }
   };
 
   // Save course and todos
   const saveCourseAndDeadlines = async () => {
     try {
-      setLoading(prev => ({ ...prev, saving: true }));
+      setLoading((prev) => ({ ...prev, saving: true }));
       setNotification(null);
-      
+
       const courseResult = await apiService.addCourse(courseData.courseCode);
-      
+
       if (courseResult && courseResult.error) {
-        if (courseResult.status === 400 && courseResult.message === "Course already added") {
+        if (
+          courseResult.status === 400 &&
+          courseResult.message === "Course already added"
+        ) {
           setNotification({
-            type: 'warning',
-            message: 'This course has already been added to your account.'
+            type: "warning",
+            message: "This course has already been added to your account.",
           });
           return false;
         } else {
           setNotification({
-            type: 'error',
-            message: courseResult.message || 'Failed to add course'
+            type: "error",
+            message: courseResult.message || "Failed to add course",
           });
           return false;
         }
       } else {
         // Course added successfully
         setNotification({
-          type: 'success',
-          message: 'Course added successfully!'
+          type: "success",
+          message: "Course added successfully!",
         });
       }
-      
+
       // Now add the todos since the course was added (or was already added)
       for (const deadline of deadlines) {
         const todoData: Todo = {
@@ -252,25 +257,30 @@ export function useReviewData(syllabusId: number) {
           eventType: deadline.eventType,
           priority: deadline.priority,
         };
-        
-        if (!todoData.title || !todoData.date || !todoData.eventType || !todoData.courseCode) {
-          console.warn('Skipping incomplete todo:', todoData);
+
+        if (
+          !todoData.title ||
+          !todoData.date ||
+          !todoData.eventType ||
+          !todoData.courseCode
+        ) {
+          console.warn("Skipping incomplete todo:", todoData);
           continue;
         }
-        
+
         await apiService.addTodo(todoData);
       }
-      
+
       return true;
     } catch (error) {
       console.error("Error saving course or deadlines:", error);
       setNotification({
-        type: 'error',
-        message: "Failed to save. Please try again."
+        type: "error",
+        message: "Failed to save. Please try again.",
       });
       return false;
     } finally {
-      setLoading(prev => ({ ...prev, saving: false }));
+      setLoading((prev) => ({ ...prev, saving: false }));
     }
   };
 
@@ -282,17 +292,23 @@ export function useReviewData(syllabusId: number) {
     });
   };
 
-  const handleDeadlineChange = (id: string | number, field: string, value: string) => {
+  const handleDeadlineChange = (
+    id: string | number,
+    field: string,
+    value: string
+  ) => {
     setDeadlines(
       deadlines.map((deadline) => {
         if (deadline.id === id) {
           if (field === "dueDate") {
+            const [year, month, day] = value.split("-").map(Number);
+            const localDate = new Date(year, month - 1, day);
             return {
               ...deadline,
-              date: new Date(value).toISOString()
+              date: localDate.toISOString(),
             };
           }
-          
+
           return { ...deadline, [field]: value };
         }
         return deadline;
@@ -312,10 +328,10 @@ export function useReviewData(syllabusId: number) {
         title: "New Deadline",
         date: new Date().toISOString(),
         eventType: "assignment",
-        priority: 3
+        priority: 3,
       },
     ]);
-    
+
     return newId;
   };
 
@@ -344,10 +360,10 @@ export function useReviewData(syllabusId: number) {
   const skipCurrentSyllabus = () => {
     // Just mark as processed without saving anything
     setNotification({
-      type: 'info',
-      message: 'Course skipped'
+      type: "info",
+      message: "Course skipped",
     });
-    
+
     return true;
   };
 
@@ -393,14 +409,14 @@ export function useReviewData(syllabusId: number) {
     searchResults,
     instructorResults,
     instructorOpen,
-    
+
     // UI state
     loading,
     error,
     notification,
     searchQuery,
     instructorQuery,
-    
+
     // Actions
     setSearchQuery,
     setInstructorQuery,
