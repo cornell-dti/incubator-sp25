@@ -19,7 +19,7 @@ export default function SyllabusReviewPage() {
   const params = useParams();
   const syllabusId = Number.parseInt(params.id as string);
   const deadlinesContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const {
     syllabus,
     totalSyllabi,
@@ -61,7 +61,7 @@ export default function SyllabusReviewPage() {
 
   const handleNext = async () => {
     const success = await saveCourseAndDeadlines();
-    
+
     if (success) {
       setTimeout(() => {
         if (syllabusId < totalSyllabi) {
@@ -74,9 +74,13 @@ export default function SyllabusReviewPage() {
   };
 
   const handleSkipCourse = async () => {
-    if (window.confirm("Are you sure you want to skip this course? It won't be added to your account.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to skip this course? It won't be added to your account."
+      )
+    ) {
       const success = skipCurrentSyllabus();
-      
+
       if (success) {
         // Navigate to next syllabus or dashboard
         setTimeout(() => {
@@ -99,17 +103,19 @@ export default function SyllabusReviewPage() {
   // Map eventType to UI-friendly display names
   const getEventTypeDisplayName = (eventType: string): string => {
     const typeMap: Record<string, string> = {
-      "readings": "Reading",
-      "memos": "Memo",
-      "assignments": "Assignment",
-      "exams": "Exam",
-      "projects": "Project",
-      "presentations": "Presentation"
+      readings: "Reading",
+      memos: "Memo",
+      assignments: "Assignment",
+      exams: "Exam",
+      projects: "Project",
+      presentations: "Presentation",
     };
-    
-    return typeMap[eventType] || eventType.charAt(0).toUpperCase() + eventType.slice(1);
-  };
 
+    return (
+      typeMap[eventType] ||
+      eventType.charAt(0).toUpperCase() + eventType.slice(1)
+    );
+  };
 
   if (syllabusId > totalSyllabi) {
     return (
@@ -150,7 +156,7 @@ export default function SyllabusReviewPage() {
       <div className="flex min-h-screen flex-col">
         <Header syllabusId={syllabusId} totalSyllabi={totalSyllabi} />
 
-        <main className="flex-1 py-6">
+        <main className="flex-1 py-6 overflow-y-auto">
           <div className="container px-4 md:px-6">
             {notification && (
               <div className="mb-4">
@@ -162,15 +168,11 @@ export default function SyllabusReviewPage() {
               </div>
             )}
 
-            <PageTitle 
-              courseCode={syllabus.extractedData?.courseCode} 
-            />
+            <PageTitle courseCode={syllabus.extractedData?.courseCode} />
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <SyllabusPreview 
-                content={syllabus.parsedContent} 
-              />
-              
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
+              <SyllabusPreview content={syllabus.parsedContent} />
+
               <CourseInformation
                 courseData={courseData}
                 searchQuery={searchQuery}
@@ -196,14 +198,16 @@ export default function SyllabusReviewPage() {
               />
             </div>
 
-            <Navigation
-              syllabusId={syllabusId}
-              totalSyllabi={totalSyllabi}
-              handlePrevious={handlePrevious}
-              handleNext={handleNext}
-              handleSkip={handleSkipCourse}
-              loading={loading}
-            />
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-2 px-4 z-10">
+              <Navigation
+                syllabusId={syllabusId}
+                totalSyllabi={totalSyllabi}
+                handlePrevious={handlePrevious}
+                handleNext={handleNext}
+                handleSkip={handleSkipCourse}
+                loading={loading}
+              />
+            </div>
           </div>
         </main>
       </div>
