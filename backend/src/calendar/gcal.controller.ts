@@ -335,14 +335,28 @@ const createTask = async (
     }
     const todo = taskDoc.data() as Todo;
 
+    let dateTimeValue;
+    if (todo.date && typeof todo.date.toDate === "function") {
+      // It's already a Firestore Timestamp object
+      dateTimeValue = todo.date.toDate().toISOString();
+    } else if (todo.date && todo.date.seconds !== undefined) {
+      // It's a serialized timestamp object
+      dateTimeValue = new Date(todo.date.seconds * 1000).toISOString();
+    } else {
+      console.warn(
+        `Todo ${taskId} has invalid date format, using current time`
+      );
+      dateTimeValue = new Date().toISOString();
+    }
+
     const task = {
       summary: `${todo.courseCode}: ${todo.title}`,
       start: {
-        dateTime: todo.date.toDate().toISOString(),
+        dateTime: dateTimeValue,
         timeZone: "America/New_York",
       },
       end: {
-        dateTime: todo.date.toDate().toISOString(),
+        dateTime: dateTimeValue,
         timeZone: "America/New_York",
       },
       colorId: "3",
