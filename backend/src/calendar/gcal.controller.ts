@@ -22,6 +22,191 @@ const gCalClient = () => {
 const calendar = gCalClient();
 
 export const gCalController: CalendarRequestHandlers = {
+  addAllCoursesToCalendar: async (req, res) => {
+    try {
+      const userId = req.user?.uid;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const user = userDoc.data() as User;
+      let calendarId = user.calendarLink;
+
+      if (!calendarId) {
+        calendarId = await createCalendar(userId, user);
+      }
+
+      // Check if the user has courses in their data
+      if (!user.courses || user.courses.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: "No courses found in user data",
+          calendarId: calendarId,
+          calendarUrl: `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calendarId)}`,
+          addUrl: `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calendarId)}`,
+        });
+      }
+
+      const totalEventPromises: Promise<any>[] = [];
+      const courseResults: Array<{
+        courseId: string;
+        courseCode: string;
+        exams: number;
+        deliverables: number;
+        todos: number;
+      }> = [];
+
+      // Process each course from the user's courses array
+      for (const course of user.courses) {
+        if (!course.id) {
+          console.warn(`Course without ID found in user's courses array`);
+          continue; // Skip if course doesn't have an ID
+        }
+
+        const courseId = course.id;
+        const eventPromises: Promise<any>[] = [];
+
+        // Get exams for this course
+        const examSnapshot = await db
+          .collection("exams")
+          .where("courseId", "==", courseId)
+          .get();
+
+        const exams: Exam[] = [];
+        examSnapshot.forEach((doc) => {
+          exams.push({
+            id: doc.id,
+            ...(doc.data() as Exam),
+          });
+        });
+
+        // Get deliverables for this course
+        const deliverableSnapshot = await db
+          .collection("finalDeliverables")
+          .where("courseId", "==", courseId)
+          .get();
+
+        const deliverables: FinalDeliverable[] = [];
+        deliverableSnapshot.forEach((doc) => {
+          deliverables.push({
+            id: doc.id,
+            ...(doc.data() as FinalDeliverable),
+          });
+        });
+
+        // Add exams to calendar
+        for (const exam of exams) {
+          if (exam.id) {
+            await createExamEvent(userId, exam.id, eventPromises);
+          }
+        }
+
+        // Add deliverables to calendar
+        for (const deliverable of deliverables) {
+          if (deliverable.id) {
+            await createFinalDeliverableTask(
+              userId,
+              deliverable.id,
+              eventPromises
+            );
+          }
+        }
+
+        // Get todos for this course
+        const todoSnapshot = await db
+          .collection("todos")
+          .where("userId", "==", userId)
+          .where("courseCode", "==", course.courseCode)
+          .get();
+
+        const todos: Todo[] = [];
+        todoSnapshot.forEach((doc) => {
+          todos.push({
+            id: doc.id,
+            ...(doc.data() as Todo),
+          });
+        });
+
+        // Add todos to calendar
+        for (const todo of todos) {
+          if (todo.id) {
+            await createTask(userId, todo.id, eventPromises);
+          }
+        }
+
+        // Add course results to summary
+        courseResults.push({
+          courseId,
+          courseCode: course.courseCode,
+          exams: exams.length,
+          deliverables: deliverables.length,
+          todos: todos.length,
+        });
+
+        // Add this course's promises to total
+        totalEventPromises.push(...eventPromises);
+      }
+
+      // If no valid courses were found
+      if (courseResults.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: "No valid courses found for this user",
+          calendarId: calendarId,
+          calendarUrl: `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calendarId)}`,
+          addUrl: `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calendarId)}`,
+        });
+      }
+
+      // Process all calendar additions
+      await Promise.all(totalEventPromises);
+
+      // Create summary of what was added
+      const summary = courseResults
+        .map(
+          (result) =>
+            `${result.courseCode}: ${result.exams} exams, ${result.deliverables} deliverables, ${result.todos} todos`
+        )
+        .join("; ");
+
+      // Calculate totals
+      const totalExams = courseResults.reduce(
+        (sum, course) => sum + course.exams,
+        0
+      );
+      const totalDeliverables = courseResults.reduce(
+        (sum, course) => sum + course.deliverables,
+        0
+      );
+      const totalTodos = courseResults.reduce(
+        (sum, course) => sum + course.todos,
+        0
+      );
+
+      const calendarUrl = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calendarId)}`;
+      const addUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calendarId)}`;
+
+      return res.status(200).json({
+        success: true,
+        calendarId: calendarId,
+        calendarUrl: calendarUrl,
+        addUrl: addUrl,
+        coursesAdded: courseResults.length,
+        summary: summary,
+        message: `Added ${totalExams} exams, ${totalDeliverables} deliverables, and ${totalTodos} todos to your calendar.`,
+      });
+    } catch (error) {
+      console.error(`Error adding all courses to calendar: ${error}`);
+      return res
+        .status(500)
+        .json({ error: "Failed to add courses to calendar" });
+    }
+  },
   addCourseToCalendar: async (req, res) => {
     try {
       const userId = req.user?.uid;
@@ -53,13 +238,13 @@ export const gCalController: CalendarRequestHandlers = {
 
       const course = courseDoc.data() as Course;
 
+      // Get all required data first
       const examSnapshot = await db
         .collection("exams")
         .where("courseId", "==", courseId)
         .get();
 
       const exams: Exam[] = [];
-
       examSnapshot.forEach((doc) => {
         exams.push({
           id: doc.id,
@@ -73,31 +258,12 @@ export const gCalController: CalendarRequestHandlers = {
         .get();
 
       const deliverables: FinalDeliverable[] = [];
-
       deliverableSnapshot.forEach((doc) => {
         deliverables.push({
           id: doc.id,
           ...(doc.data() as FinalDeliverable),
         });
       });
-
-      const eventPromises: Promise<any>[] = [];
-
-      for (const exam of exams) {
-        if (exam.id) {
-          await createExamEvent(userId, exam.id, eventPromises);
-        }
-      }
-
-      for (const deliverable of deliverables) {
-        if (deliverable.id) {
-          await createFinalDeliverableTask(
-            userId,
-            deliverable.id,
-            eventPromises
-          );
-        }
-      }
 
       const todoSnapshot = await db
         .collection("todos")
@@ -106,7 +272,6 @@ export const gCalController: CalendarRequestHandlers = {
         .get();
 
       const todos: Todo[] = [];
-
       todoSnapshot.forEach((doc) => {
         todos.push({
           id: doc.id,
@@ -114,13 +279,110 @@ export const gCalController: CalendarRequestHandlers = {
         });
       });
 
-      for (const todo of todos) {
-        if (todo.id) {
-          await createTask(userId, todo.id, eventPromises);
+      // Prepare event data
+      const allEvents = [];
+
+      // Add exam events
+      for (const exam of exams) {
+        if (exam.id) {
+          allEvents.push({
+            type: "exam",
+            id: exam.id,
+          });
         }
       }
 
-      await Promise.all(eventPromises);
+      // Add deliverable events
+      for (const deliverable of deliverables) {
+        if (deliverable.id) {
+          allEvents.push({
+            type: "deliverable",
+            id: deliverable.id,
+          });
+        }
+      }
+
+      // Add todo events
+      for (const todo of todos) {
+        if (todo.id) {
+          allEvents.push({
+            type: "todo",
+            id: todo.id,
+          });
+        }
+      }
+
+      // Process in batches with exponential backoff
+      const batchSize = 10;
+      let successCount = 0;
+      let failCount = 0;
+
+      // Helper function to add an event with backoff
+      const addEventWithBackoff = async (
+        eventType: string,
+        eventId: string,
+        attempt = 1
+      ) => {
+        const maxAttempts = 5;
+        const baseDelay = 1000; // 1 second
+
+        try {
+          switch (eventType) {
+            case "exam":
+              await processExam(userId, eventId);
+              break;
+            case "deliverable":
+              await processDeliverable(userId, eventId);
+              break;
+            case "todo":
+              await processTodo(userId, eventId);
+              break;
+          }
+          return true;
+        } catch (error: any) {
+          if (
+            error.code === 429 || // Too Many Requests
+            (error.code >= 500 && error.code < 600) // Server errors
+          ) {
+            if (attempt >= maxAttempts) {
+              console.error(
+                `Failed to add event ${eventId} after ${maxAttempts} attempts`
+              );
+              return false;
+            }
+
+            // Exponential backoff with jitter
+            const delay =
+              baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
+            console.log(
+              `Rate limit hit. Retrying in ${delay}ms (attempt ${attempt})`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            return addEventWithBackoff(eventType, eventId, attempt + 1);
+          }
+
+          console.error(`Error adding event ${eventType}:${eventId}:`, error);
+          return false;
+        }
+      };
+
+      // Process events in batches
+      for (let i = 0; i < allEvents.length; i += batchSize) {
+        const batch = allEvents.slice(i, i + batchSize);
+        const results = await Promise.all(
+          batch.map((event) => addEventWithBackoff(event.type, event.id))
+        );
+
+        // Count successful additions
+        const successfulAdds = results.filter((result) => result).length;
+        successCount += successfulAdds;
+        failCount += batch.length - successfulAdds;
+
+        // Add a small delay between batches
+        if (i + batchSize < allEvents.length) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
 
       const calendarUrl = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calendarId)}`;
       const addUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calendarId)}`;
@@ -130,7 +392,14 @@ export const gCalController: CalendarRequestHandlers = {
         calendarId: calendarId,
         calendarUrl: calendarUrl,
         addUrl: addUrl,
-        message: `Added ${exams.length} exams, ${deliverables.length} deliverables, and ${todos.length} todos to your calendar.`,
+        stats: {
+          exams: exams.length,
+          deliverables: deliverables.length,
+          todos: todos.length,
+          successCount,
+          failCount,
+        },
+        message: `Successfully added ${successCount} events to your calendar. Failed to add ${failCount} events.`,
       });
     } catch (error) {
       console.error(`Error adding course to calendar: ${error}`);
@@ -482,4 +751,131 @@ const createTask = async (
     console.error(`Error creating task in calendar: ${error}`);
     throw error;
   }
+};
+
+// Helper functions for batch processing
+const processExam = async (userId: string, examId: string) => {
+  const userDoc = await db.collection("users").doc(userId).get();
+  const user = userDoc.data() as User;
+  let calendarId = user.calendarLink;
+  if (!calendarId) {
+    calendarId = await createCalendar(userId, user);
+  }
+
+  const examDoc = await db.collection("exams").doc(examId).get();
+  if (!examDoc.exists) {
+    throw new Error("Exam does not exist");
+  }
+  const exam = examDoc.data() as Exam;
+
+  const event = {
+    summary: exam.title,
+    start: {
+      dateTime: exam.startTime.toDate().toISOString(),
+      timeZone: "America/New_York",
+    },
+    end: {
+      dateTime: exam.endTime.toDate().toISOString(),
+      timeZone: "America/New_York",
+    },
+    colorId: "11",
+    reminders: {
+      useDefault: false,
+      overrides: [{ method: "popup", minutes: 60 }],
+    },
+  };
+
+  return await calendar.events.insert({
+    calendarId: calendarId,
+    requestBody: event,
+  });
+};
+
+const processDeliverable = async (userId: string, deliverableId: string) => {
+  const userDoc = await db.collection("users").doc(userId).get();
+  const user = userDoc.data() as User;
+  let calendarId = user.calendarLink;
+  if (!calendarId) {
+    calendarId = await createCalendar(userId, user);
+  }
+
+  const deliverableDoc = await db
+    .collection("finalDeliverables")
+    .doc(deliverableId)
+    .get();
+  if (!deliverableDoc.exists) {
+    throw new Error("Final Deliverable does not exist");
+  }
+  const deliverable = deliverableDoc.data() as FinalDeliverable;
+
+  const task = {
+    summary: deliverable.title,
+    start: {
+      dateTime: deliverable.dueDate.toDate().toISOString(),
+      timeZone: "America/New_York",
+    },
+    end: {
+      dateTime: deliverable.dueDate.toDate().toISOString(),
+      timeZone: "America/New_York",
+    },
+    colorId: "11",
+    reminders: {
+      useDefault: false,
+      overrides: [{ method: "popup", minutes: 30 }],
+    },
+  };
+
+  return await calendar.events.insert({
+    calendarId: calendarId,
+    requestBody: task,
+  });
+};
+
+const processTodo = async (userId: string, todoId: string) => {
+  const userDoc = await db.collection("users").doc(userId).get();
+  const user = userDoc.data() as User;
+  let calendarId = user.calendarLink;
+  if (!calendarId) {
+    calendarId = await createCalendar(userId, user);
+  }
+
+  const todoDoc = await db.collection("todos").doc(todoId).get();
+  if (!todoDoc.exists) {
+    throw new Error("Task does not exist");
+  }
+  const todo = todoDoc.data() as Todo;
+
+  let dateTimeValue;
+  if (todo.date && typeof todo.date.toDate === "function") {
+    // It's already a Firestore Timestamp object
+    dateTimeValue = todo.date.toDate().toISOString();
+  } else if (todo.date && todo.date.seconds !== undefined) {
+    // It's a serialized timestamp object
+    dateTimeValue = new Date(todo.date.seconds * 1000).toISOString();
+  } else {
+    console.warn(`Todo ${todoId} has invalid date format, using current time`);
+    dateTimeValue = new Date().toISOString();
+  }
+
+  const task = {
+    summary: `${todo.courseCode}: ${todo.title}`,
+    start: {
+      dateTime: dateTimeValue,
+      timeZone: "America/New_York",
+    },
+    end: {
+      dateTime: dateTimeValue,
+      timeZone: "America/New_York",
+    },
+    colorId: todo.eventType == "Exam" ? "11" : "3",
+    reminders: {
+      useDefault: false,
+      overrides: [{ method: "popup", minutes: 30 }],
+    },
+  };
+
+  return await calendar.events.insert({
+    calendarId: calendarId,
+    requestBody: task,
+  });
 };
