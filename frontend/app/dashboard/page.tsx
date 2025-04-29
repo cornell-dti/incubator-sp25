@@ -69,7 +69,7 @@ export default function DashboardPage() {
               onClick={navigateToOnboarding}
             >
               <Upload className="mr-2 h-4 w-4" />
-              Upload Syllabus
+              Upload Syllabi
             </Button>
             <Button variant="outline">
               <Calendar className="mr-2 h-4 w-4" />

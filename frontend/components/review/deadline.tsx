@@ -1,9 +1,12 @@
-// components/syllabus-review/Deadlines.tsx
+"use client";
+
+import type React from "react";
+
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DeadlineItem from "./deadline-item";
-import { RefObject } from "react";
+import type { RefObject } from "react";
 
 interface Deadline {
   id: number | undefined;
@@ -35,29 +38,41 @@ const Deadlines: React.FC<DeadlinesProps> = ({
   deadlinesContainerRef,
 }) => {
   return (
-    <Card className="lg:col-span-1">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Deadlines</h2>
+    <Card className="lg:col-span-1 h-full flex flex-col">
+      <CardContent className="p-6 flex-1 flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold">Deadlines</h2>
           <Button
-            size="sm"
+            size="default"
             onClick={handleAddDeadline}
-            className="bg-rose-500 hover:bg-rose-600"
+            className="bg-rose-500 hover:bg-rose-600 transition-colors"
             disabled={loading.saving}
           >
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="h-4 w-4 mr-2" />
             Add Deadline
           </Button>
         </div>
 
         <div
           ref={deadlinesContainerRef}
-          className="space-y-4 max-h-[60vh] overflow-y-auto pr-2"
+          className="space-y-4 h-[70vh] overflow-y-auto pr-2"
         >
           {deadlines.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">
-              No deadlines found in this syllabus
-            </p>
+            <div className="text-center py-12 border border-dashed rounded-lg">
+              <p className="text-muted-foreground">
+                No deadlines found in this syllabus
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddDeadline}
+                className="mt-4"
+                disabled={loading.saving}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add your first deadline
+              </Button>
+            </div>
           ) : (
             deadlines.map((deadline) => (
               <DeadlineItem
