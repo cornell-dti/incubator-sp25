@@ -11,5 +11,6 @@ router.post(
   authMiddleware,
   gCalController.addCourseToCalendar
 );
+router.delete("/", authMiddleware, gCalController.clearCalendarEvents);
 
 export default router;

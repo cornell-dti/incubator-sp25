@@ -180,6 +180,112 @@ export const gCalController: CalendarRequestHandlers = {
       return res.status(500).json({ error: "Failed to get calendar link" });
     }
   },
+  clearCalendarEvents: async (req, res) => {
+    try {
+      const userId = req.user?.uid;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const user = userDoc.data() as User;
+      const calendarId = user.calendarLink;
+
+      if (!calendarId) {
+        return res
+          .status(404)
+          .json({ error: "No calendar found for this user" });
+      }
+
+      // Get all events from the calendar
+      const events = await calendar.events.list({
+        calendarId: calendarId,
+        singleEvents: true,
+        maxResults: 2500, // Google Calendar API limit
+      });
+
+      if (!events.data.items || events.data.items.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: "No events found to delete",
+        });
+      }
+
+      // Implement batch processing with delay to avoid rate limits
+      const batchSize = 10; // Process in small batches
+      const totalEvents = events.data.items.length;
+      let processedCount = 0;
+      let failedCount = 0;
+
+      // Helper function to delete with exponential backoff
+      const deleteWithBackoff = async (eventId: string, attempt = 1) => {
+        const maxAttempts = 5;
+        const baseDelay = 1000; // 1 second
+
+        try {
+          await calendar.events.delete({
+            calendarId: calendarId,
+            eventId: eventId,
+          });
+          return true;
+        } catch (error: any) {
+          if (
+            error.code === 429 || // Too Many Requests
+            (error.code >= 500 && error.code < 600) // Server errors
+          ) {
+            if (attempt >= maxAttempts) {
+              console.error(
+                `Failed to delete event ${eventId} after ${maxAttempts} attempts`
+              );
+              return false;
+            }
+
+            // Exponential backoff with jitter
+            const delay =
+              baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
+            console.log(
+              `Rate limit hit. Retrying in ${delay}ms (attempt ${attempt})`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            return deleteWithBackoff(eventId, attempt + 1);
+          }
+
+          console.error(`Error deleting event ${eventId}:`, error);
+          return false;
+        }
+      };
+
+      // Process events in batches
+      for (let i = 0; i < totalEvents; i += batchSize) {
+        const batch = events.data.items.slice(i, i + batchSize);
+        const results = await Promise.all(
+          batch.map((event) => deleteWithBackoff(event.id as string))
+        );
+
+        // Count successful deletions
+        const successfulDeletes = results.filter((result) => result).length;
+        processedCount += successfulDeletes;
+        failedCount += batch.length - successfulDeletes;
+
+        // Add a small delay between batches
+        if (i + batchSize < totalEvents) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Successfully deleted ${processedCount} events from your calendar. Failed to delete ${failedCount} events.`,
+      });
+    } catch (error) {
+      console.error(`Error clearing calendar events: ${error}`);
+      return res.status(500).json({ error: "Failed to clear calendar events" });
+    }
+  },
 };
 
 const createCalendar = async (userId: string, user: User): Promise<string> => {
