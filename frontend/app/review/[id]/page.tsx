@@ -156,7 +156,7 @@ export default function SyllabusReviewPage() {
       <div className="flex min-h-screen flex-col">
         <Header syllabusId={syllabusId} totalSyllabi={totalSyllabi} />
 
-        <main className="flex-1 py-6 overflow-y-auto">
+        <main className="flex-1 py-6 pb-20 overflow-y-auto">
           <div className="container px-4 md:px-6">
             {notification && (
               <div className="mb-4">
@@ -198,7 +198,7 @@ export default function SyllabusReviewPage() {
               />
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-2 px-4 z-10">
+            <div className="fixed bottom-0 left-0 right-0 z-10">
               <Navigation
                 syllabusId={syllabusId}
                 totalSyllabi={totalSyllabi}
