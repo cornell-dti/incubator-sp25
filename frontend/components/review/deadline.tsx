@@ -38,8 +38,8 @@ const Deadlines: React.FC<DeadlinesProps> = ({
   deadlinesContainerRef,
 }) => {
   return (
-    <Card className="lg:col-span-1">
-      <CardContent className="p-6">
+    <Card className="lg:col-span-1 h-full flex flex-col">
+      <CardContent className="p-6 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Deadlines</h2>
           <Button
@@ -55,11 +55,7 @@ const Deadlines: React.FC<DeadlinesProps> = ({
 
         <div
           ref={deadlinesContainerRef}
-          className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "#D1D5DB #F3F4F6",
-          }}
+          className="space-y-4 h-[70vh] overflow-y-auto pr-2"
         >
           {deadlines.length === 0 ? (
             <div className="text-center py-12 border border-dashed rounded-lg">

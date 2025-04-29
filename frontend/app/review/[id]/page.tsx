@@ -89,7 +89,7 @@ export default function SyllabusReviewPage() {
           } else {
             router.push("/dashboard");
           }
-        }, 1000);
+        }, 500);
       }
     }
   };
@@ -170,7 +170,7 @@ export default function SyllabusReviewPage() {
 
             <PageTitle courseCode={syllabus.extractedData?.courseCode} />
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 flex-1">
               <SyllabusPreview content={syllabus.parsedContent} />
 
               <CourseInformation
