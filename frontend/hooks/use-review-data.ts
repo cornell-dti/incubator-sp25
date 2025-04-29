@@ -137,6 +137,19 @@ export function useReviewData(syllabusId: number) {
     }
   }, [syllabusId, syllabi]);
 
+  useEffect(() => {
+    if (courseData.courseCode && courseData.courseCode.includes("/")) {
+      // Only clean if it contains a separator like '/'
+      const cleanedCode = extractFirstCourseCode(courseData.courseCode);
+      if (cleanedCode !== courseData.courseCode) {
+        setCourseData((prev) => ({
+          ...prev,
+          courseCode: cleanedCode,
+        }));
+      }
+    }
+  }, [courseData.courseCode]);
+
   // Fetch all courses
   const fetchCourses = async () => {
     setLoading((prev) => ({ ...prev, courses: true }));
@@ -151,6 +164,10 @@ export function useReviewData(syllabusId: number) {
     }
   };
 
+  const extractFirstCourseCode = (courseCode: string): string => {
+    return courseCode.split(/\s*\/\s*|\s*,\s*|\s*;\s*/)[0].trim();
+  };
+
   // Fetch instructors for a course
   const fetchInstructors = async () => {
     if (!courseData.courseCode) return;
@@ -158,7 +175,7 @@ export function useReviewData(syllabusId: number) {
     setLoading((prev) => ({ ...prev, instructors: true }));
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/courses/${courseData.courseCode}`
+        `http://localhost:3000/api/courses/${extractFirstCourseCode(courseData.courseCode)}`
       );
       const instructorList = response.data.sections.map((section: Section) => {
         return section.instructor;
@@ -203,7 +220,7 @@ export function useReviewData(syllabusId: number) {
     setLoading((prev) => ({ ...prev, instructors: true }));
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/search/instructor/${courseData.courseCode}/${query}`
+        `http://localhost:3000/api/search/instructor/${extractFirstCourseCode(courseData.courseCode)}/${query}`
       );
       setInstructorResults(response.data.instructors || []);
     } catch (error) {
@@ -220,7 +237,9 @@ export function useReviewData(syllabusId: number) {
       setLoading((prev) => ({ ...prev, saving: true }));
       setNotification(null);
 
-      const courseResult = await apiService.addCourse(courseData.courseCode);
+      const courseResult = await apiService.addCourse(
+        extractFirstCourseCode(courseData.courseCode)
+      );
 
       if (courseResult && courseResult.error) {
         if (
@@ -251,7 +270,7 @@ export function useReviewData(syllabusId: number) {
       for (const deadline of deadlines) {
         const todoData: Todo = {
           userId: "",
-          courseCode: courseData.courseCode,
+          courseCode: extractFirstCourseCode(courseData.courseCode),
           title: deadline.title,
           date: Timestamp.fromDate(new Date(deadline.date)),
           eventType: deadline.eventType,
