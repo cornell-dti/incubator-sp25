@@ -37,7 +37,9 @@ export function DashboardDeadlines({
   initialCourseFilter = null,
 }: DashboardDeadlinesProps) {
   // State for filters
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(initialCourseFilter);
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(
+    initialCourseFilter
+  );
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [showUpcomingOnly, setShowUpcomingOnly] = useState(true);
 
@@ -61,9 +63,13 @@ export function DashboardDeadlines({
 
       if (selectedCourse) {
         const course = courses.find(
-          (c) => c.id === deadline.courseId || c.courseCode === deadline.courseCode
+          (c) =>
+            c.id === deadline.courseId || c.courseCode === deadline.courseCode
         );
-        if (!course || (course.courseCode !== selectedCourse && course.id !== selectedCourse)) {
+        if (
+          !course ||
+          (course.courseCode !== selectedCourse && course.id !== selectedCourse)
+        ) {
           return false;
         }
       }
@@ -78,7 +84,13 @@ export function DashboardDeadlines({
 
       return true;
     });
-  }, [sortedDeadlines, selectedCourse, selectedType, showUpcomingOnly, courses]);
+  }, [
+    sortedDeadlines,
+    selectedCourse,
+    selectedType,
+    showUpcomingOnly,
+    courses,
+  ]);
 
   const clearFilters = () => {
     setSelectedCourse(null);
@@ -91,7 +103,9 @@ export function DashboardDeadlines({
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <CardTitle>All Deadlines</CardTitle>
-            <CardDescription>View and manage all your deadlines</CardDescription>
+            <CardDescription>
+              View and manage all your deadlines
+            </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             {/* Show upcoming toggle */}
@@ -108,26 +122,30 @@ export function DashboardDeadlines({
             {(selectedCourse || selectedType) && (
               <div className="flex gap-2 items-center">
                 {selectedCourse && (
-                  <Badge 
-                    variant="outline" 
-                    className="flex items-center gap-1"
-                  >
+                  <Badge variant="outline" className="flex items-center gap-1">
                     Course: {selectedCourse}
-                    <span className="cursor-pointer" onClick={() => setSelectedCourse(null)}>×</span>
+                    <span
+                      className="cursor-pointer"
+                      onClick={() => setSelectedCourse(null)}
+                    >
+                      ×
+                    </span>
                   </Badge>
                 )}
                 {selectedType && (
-                  <Badge 
-                    variant="outline" 
-                    className="flex items-center gap-1"
-                  >
+                  <Badge variant="outline" className="flex items-center gap-1">
                     Type: {selectedType}
-                    <span className="cursor-pointer" onClick={() => setSelectedType(null)}>×</span>
+                    <span
+                      className="cursor-pointer"
+                      onClick={() => setSelectedType(null)}
+                    >
+                      ×
+                    </span>
                   </Badge>
                 )}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={clearFilters}
                   className="h-7 px-2"
                 >
@@ -197,6 +215,19 @@ export function DashboardDeadlines({
               );
               const courseCode = course ? course.courseCode : "Unknown";
 
+              // Clean up the title by removing potential duplicate course code
+              let cleanTitle = deadline.title;
+
+              // Remove the course code if it appears at the beginning of the title (with or without colon)
+              if (cleanTitle.startsWith(courseCode)) {
+                // Remove the course code and any following colon or space
+                cleanTitle = cleanTitle.substring(courseCode.length).trim();
+                // Remove leading colon or space if present
+                if (cleanTitle.startsWith(":") || cleanTitle.startsWith(" ")) {
+                  cleanTitle = cleanTitle.substring(1).trim();
+                }
+              }
+
               return (
                 <div
                   key={deadline.id}
@@ -230,7 +261,8 @@ export function DashboardDeadlines({
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {courseCode}: {deadline.title}
+                        {courseCode}
+                        {cleanTitle ? `: ${cleanTitle}` : ""}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         Due on {formatTimestamp(deadline.date, "short")}
