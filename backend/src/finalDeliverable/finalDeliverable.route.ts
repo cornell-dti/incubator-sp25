@@ -16,5 +16,10 @@ router.delete(
   authMiddleware,
   finalDeliverableController.deleteDeliverable
 );
+router.get(
+  "/course/:courseId",
+  authMiddleware,
+  finalDeliverableController.getDeliverableByCourseId
+);
 
 export default router;

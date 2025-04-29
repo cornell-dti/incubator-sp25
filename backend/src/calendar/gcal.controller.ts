@@ -1,10 +1,11 @@
-import { db, auth } from "../config/firebase";
+import { db } from "../config/firebase";
 import {
   CalendarRequestHandlers,
   Exam,
   FinalDeliverable,
   Todo,
   User,
+  Course,
 } from "../types";
 import { google } from "googleapis";
 
@@ -15,70 +16,132 @@ const gCalClient = () => {
     scopes: ["https://www.googleapis.com/auth/calendar"],
   });
 
-  return {
-    calendar: google.calendar({ version: "v3", auth: auth }),
-    taskList: google.tasks({ version: "v1", auth: auth }),
-  };
+  return google.calendar({ version: "v3", auth: auth });
 };
 
-const { calendar, taskList } = gCalClient();
+const calendar = gCalClient();
 
 export const gCalController: CalendarRequestHandlers = {
-  createExamEvent: async (req, res) => {
+  addCourseToCalendar: async (req, res) => {
     try {
       const userId = req.user?.uid;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
+      const { courseId } = req.params;
+      if (!courseId) {
+        return res.status(400).json({ error: "Course ID is required" });
+      }
+
       const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
       const user = userDoc.data() as User;
-      let calLink = user.calendarLink;
-      if (!calLink) {
-        calLink = await createCalendar(userId, user);
+      let calendarId = user.calendarLink;
+
+      if (!calendarId) {
+        calendarId = await createCalendar(userId, user);
       }
 
-      const { examId } = req.body;
-      const examDoc = await db.collection("exams").doc(examId).get();
-      if (!examDoc.exists) {
-        return res.status(404).json({ error: "Exam does not exist" });
+      const courseDoc = await db.collection("courses").doc(courseId).get();
+      if (!courseDoc.exists) {
+        return res.status(404).json({ error: "Course not found" });
       }
-      const exam = examDoc.data() as Exam;
 
-      const event = {
-        summary: exam.title,
-        start: {
-          dateTime: exam.startTime.toDate().toISOString(),
-          timeZone: "America/New_York",
-        },
-        end: {
-          dateTime: exam.endTime.toDate().toISOString(),
-          timeZone: "America/New_York",
-        },
-        colorId: "11",
-      };
+      const course = courseDoc.data() as Course;
 
-      const response = await calendar.events.insert({
-        calendarId: calLink,
-        requestBody: event,
+      const examSnapshot = await db
+        .collection("exams")
+        .where("courseId", "==", courseId)
+        .get();
+
+      const exams: Exam[] = [];
+
+      examSnapshot.forEach((doc) => {
+        exams.push({
+          id: doc.id,
+          ...(doc.data() as Exam),
+        });
       });
 
-      if (!response.data.id) {
-        throw new Error("Event creation failed: No ID returned");
+      const deliverableSnapshot = await db
+        .collection("finalDeliverables")
+        .where("courseId", "==", courseId)
+        .get();
+
+      const deliverables: FinalDeliverable[] = [];
+
+      deliverableSnapshot.forEach((doc) => {
+        deliverables.push({
+          id: doc.id,
+          ...(doc.data() as FinalDeliverable),
+        });
+      });
+
+      const eventPromises: Promise<any>[] = [];
+
+      for (const exam of exams) {
+        if (exam.id) {
+          await createExamEvent(userId, exam.id, eventPromises);
+        }
       }
+
+      for (const deliverable of deliverables) {
+        if (deliverable.id) {
+          await createFinalDeliverableTask(
+            userId,
+            deliverable.id,
+            eventPromises
+          );
+        }
+      }
+
+      const todoSnapshot = await db
+        .collection("todos")
+        .where("userId", "==", userId)
+        .where("courseCode", "==", course.courseCode)
+        .get();
+
+      const todos: Todo[] = [];
+
+      todoSnapshot.forEach((doc) => {
+        todos.push({
+          id: doc.id,
+          ...(doc.data() as Todo),
+        });
+      });
+
+      for (const todo of todos) {
+        if (todo.id) {
+          await createTask(userId, todo.id, eventPromises);
+        }
+      }
+
+      await Promise.all(eventPromises);
+
+      const calendarUrl = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calendarId)}`;
+      const addUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calendarId)}`;
 
       return res.status(200).json({
         success: true,
-        id: response.data.id,
+        calendarId: calendarId,
+        calendarUrl: calendarUrl,
+        addUrl: addUrl,
+        message: `Added ${exams.length} exams, ${deliverables.length} deliverables, and ${todos.length} todos to your calendar.`,
       });
     } catch (error) {
-      console.error(`Error creating exam event in calendar: ${error}`);
+      console.error(`Error adding course to calendar: ${error}`);
       return res
         .status(500)
-        .json({ error: "Failed to retrieve create exam event" });
+        .json({ error: "Failed to add course to calendar" });
     }
   },
-  createFinalDeliverableTask: async (req, res) => {
+
+  // Get calendar link for sharing or opening
+  getCalendarLink: async (req, res) => {
     try {
       const userId = req.user?.uid;
       if (!userId) {
@@ -86,103 +149,35 @@ export const gCalController: CalendarRequestHandlers = {
       }
 
       const userDoc = await db.collection("users").doc(userId).get();
-      const user = userDoc.data() as User;
-      let taskListId = user.taskListId;
-      if (!taskListId) {
-        taskListId = await createTaskList(userId, user);
+      if (!userDoc.exists) {
+        return res.status(404).json({ error: "User not found" });
       }
 
-      const { deliverableId } = req.body;
-      const deliverableDoc = await db
-        .collection("finalDeliverables")
-        .doc(deliverableId)
-        .get();
-      if (!deliverableDoc.exists) {
+      const user = userDoc.data() as User;
+      const calendarId = user.calendarLink;
+
+      if (!calendarId) {
         return res
           .status(404)
-          .json({ error: "Final Deliverable does not exist" });
-      }
-      const deliverable = deliverableDoc.data() as FinalDeliverable;
-
-      const task = {
-        title: deliverable.title,
-        due: deliverable.dueDate.toDate().toISOString(),
-        status: "needsAction",
-      };
-
-      const response = await taskList.tasks.insert({
-        tasklist: taskListId,
-        requestBody: task,
-      });
-
-      if (!response.data.id) {
-        throw new Error("Task creation failed: No ID returned");
+          .json({ error: "No calendar found for this user" });
       }
 
-      await db.collection("finalDeliverables").doc(deliverableId).update({
-        taskId: response.data.id,
+      const calendarDetails = await calendar.calendars.get({
+        calendarId: calendarId,
       });
+
+      // Generate URL for viewing the calendar
+      const addUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calendarId)}`;
 
       return res.status(200).json({
         success: true,
-        id: response.data.id,
+        calendarId: calendarId,
+        calendarName: calendarDetails.data.summary,
+        addUrl: addUrl,
       });
     } catch (error) {
-      console.error(
-        `Error creating final deliverable task in calendar: ${error}`
-      );
-      return res
-        .status(500)
-        .json({ error: "Failed to create final deliverable task" });
-    }
-  },
-  createTask: async (req, res) => {
-    try {
-      const userId = req.user?.uid;
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-
-      const userDoc = await db.collection("users").doc(userId).get();
-      const user = userDoc.data() as User;
-      let taskListId = user.taskListId;
-      if (!taskListId) {
-        taskListId = await createTaskList(userId, user);
-      }
-
-      const { taskId } = req.body;
-      const taskDoc = await db.collection("tasks").doc(taskId).get();
-      if (!taskDoc.exists) {
-        return res.status(404).json({ error: "Task does not exist" });
-      }
-      const todo = taskDoc.data() as Todo;
-
-      const task = {
-        title: `${todo.courseCode}: ${todo.title}`,
-        due: todo.date.toDate().toISOString(),
-        status: "needsAction",
-      };
-
-      const response = await taskList.tasks.insert({
-        tasklist: taskListId,
-        requestBody: task,
-      });
-
-      if (!response.data.id) {
-        throw new Error("Task creation failed: No ID returned");
-      }
-
-      await db.collection("finalDeliverables").doc(taskId).update({
-        taskId: response.data.id,
-      });
-
-      return res.status(200).json({
-        success: true,
-        id: response.data.id,
-      });
-    } catch (error) {
-      console.error(`Error creating task in calendar: ${error}`);
-      return res.status(500).json({ error: "Failed to create task" });
+      console.error(`Error getting calendar link: ${error}`);
+      return res.status(500).json({ error: "Failed to get calendar link" });
     }
   },
 };
@@ -196,40 +191,175 @@ const createCalendar = async (userId: string, user: User): Promise<string> => {
       },
     });
 
-    await db.collection("users").doc(userId).update({
-      calendarLink: response.data.id,
-    });
-
-    if (!response.data.id) {
+    const calId = response.data.id;
+    if (!calId) {
       throw new Error("Calendar creation failed: No ID returned");
     }
 
-    return response.data.id;
-  } catch (error) {
-    console.error("Error creating calendar:", error);
-    throw error;
-  }
-};
-
-const createTaskList = async (userId: string, user: User): Promise<string> => {
-  try {
-    const response = await taskList.tasklists.insert({
+    await calendar.acl.insert({
+      calendarId: calId,
       requestBody: {
-        title: `${user.email} Tasks`,
+        role: "writer",
+        scope: { type: "user", value: user.email },
       },
     });
 
     await db.collection("users").doc(userId).update({
-      taskListId: response.data.id,
+      calendarLink: calId,
     });
 
-    if (!response.data.id) {
-      throw new Error("Task list creation failed: No ID returned");
+    return calId;
+  } catch (error) {
+    console.error("Error creating public calendar:", error);
+    throw error;
+  }
+};
+
+const createExamEvent = async (
+  userId: string,
+  examId: string,
+  eventPromises: Promise<any>[]
+) => {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    const user = userDoc.data() as User;
+    let calendarId = user.calendarLink;
+    if (!calendarId) {
+      calendarId = await createCalendar(userId, user);
     }
 
-    return response.data.id;
+    const examDoc = await db.collection("exams").doc(examId).get();
+    if (!examDoc.exists) {
+      return "Exam does not exist";
+    }
+    const exam = examDoc.data() as Exam;
+
+    const event = {
+      summary: exam.title,
+      start: {
+        dateTime: exam.startTime.toDate().toISOString(),
+        timeZone: "America/New_York",
+      },
+      end: {
+        dateTime: exam.endTime.toDate().toISOString(),
+        timeZone: "America/New_York",
+      },
+      colorId: "11",
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: "popup", minutes: 60 }],
+      },
+    };
+
+    eventPromises.push(
+      calendar.events.insert({
+        calendarId: calendarId,
+        requestBody: event,
+      })
+    );
   } catch (error) {
-    console.error("Error creating task list:", error);
+    console.error(`Error creating exam event in calendar: ${error}`);
+    throw error;
+  }
+};
+
+const createFinalDeliverableTask = async (
+  userId: string,
+  deliverableId: string,
+  eventPromises: Promise<any>[]
+) => {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    const user = userDoc.data() as User;
+    let calendarId = user.calendarLink;
+    if (!calendarId) {
+      calendarId = await createCalendar(userId, user);
+    }
+
+    const deliverableDoc = await db
+      .collection("finalDeliverables")
+      .doc(deliverableId)
+      .get();
+    if (!deliverableDoc.exists) {
+      return "Final Deliverable does not exist";
+    }
+    const deliverable = deliverableDoc.data() as FinalDeliverable;
+
+    const task = {
+      summary: deliverable.title,
+      start: {
+        dateTime: deliverable.dueDate.toDate().toISOString(),
+        timeZone: "America/New_York",
+      },
+      end: {
+        dateTime: deliverable.dueDate.toDate().toISOString(),
+        timeZone: "America/New_York",
+      },
+      colorId: "11",
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: "popup", minutes: 30 }],
+      },
+    };
+
+    eventPromises.push(
+      calendar.events.insert({
+        calendarId: calendarId,
+        requestBody: task,
+      })
+    );
+  } catch (error) {
+    console.error(
+      `Error creating final deliverable task in calendar: ${error}`
+    );
+    throw error;
+  }
+};
+
+const createTask = async (
+  userId: string,
+  taskId: string,
+  eventPromises: Promise<any>[]
+) => {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    const user = userDoc.data() as User;
+    let calendarId = user.calendarLink;
+    if (!calendarId) {
+      calendarId = await createCalendar(userId, user);
+    }
+
+    const taskDoc = await db.collection("todos").doc(taskId).get();
+    if (!taskDoc.exists) {
+      return "Task does not exist";
+    }
+    const todo = taskDoc.data() as Todo;
+
+    const task = {
+      summary: `${todo.courseCode}: ${todo.title}`,
+      start: {
+        dateTime: todo.date.toDate().toISOString(),
+        timeZone: "America/New_York",
+      },
+      end: {
+        dateTime: todo.date.toDate().toISOString(),
+        timeZone: "America/New_York",
+      },
+      colorId: "3",
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: "popup", minutes: 30 }],
+      },
+    };
+
+    eventPromises.push(
+      calendar.events.insert({
+        calendarId: calendarId,
+        requestBody: task,
+      })
+    );
+  } catch (error) {
+    console.error(`Error creating task in calendar: ${error}`);
     throw error;
   }
 };
