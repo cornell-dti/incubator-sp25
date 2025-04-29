@@ -5,19 +5,22 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Calendar, Upload, LogOut } from "lucide-react";
+import { Calendar, Upload, LogOut, Loader2 } from "lucide-react";
 import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { DashboardDeadlines } from "@/components/dashboard/dashboard-deadlines";
 import { DashboardCourses } from "@/components/dashboard/dashboard-courses";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { createApiService } from "@/lib/api";
 
 export default function DashboardPage() {
   const { courses, exams, todos, deadlines, loading, refreshData } =
     useDashboardData();
   const { logout } = useAuth();
+  const [isAddingToCalendar, setIsAddingToCalendar] = useState(false);
 
   // Function to handle redirect to onboarding page
   const router = useRouter();
@@ -29,6 +32,9 @@ export default function DashboardPage() {
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<
     string | null
   >(null);
+
+  const apiService = createApiService();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (activeTab !== "deadlines") {
@@ -56,6 +62,33 @@ export default function DashboardPage() {
     }
   };
 
+  const handleAddCoursesToCalendar = async () => {
+    setIsAddingToCalendar(true);
+    try {
+      const response = await apiService.addAllCoursesToCalendar();
+      toast({
+        title: "Success!",
+        description: response.message || "All courses added to your calendar.",
+        variant: "default",
+      });
+
+      // If there's a calendar URL in the response, we can display it
+      if (response.calendarUrl) {
+        // You could potentially store this URL in state and display it
+        console.log("Calendar URL:", response.calendarUrl);
+      }
+    } catch (error) {
+      console.error("Error adding courses to calendar:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add courses to calendar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingToCalendar(false);
+    }
+  };
+
   return (
     <AuthGuard>
       <DashboardShell>
@@ -71,9 +104,22 @@ export default function DashboardPage() {
               <Upload className="mr-2 h-4 w-4" />
               Upload Syllabi
             </Button>
-            <Button variant="outline">
-              <Calendar className="mr-2 h-4 w-4" />
-              Add Courses to Calendar
+            <Button
+              variant="outline"
+              onClick={handleAddCoursesToCalendar}
+              disabled={isAddingToCalendar || courses.length === 0}
+            >
+              {isAddingToCalendar ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Add Courses to Calendar
+                </>
+              )}
             </Button>
             <Button variant="ghost" onClick={handleLogout} className="ml-2">
               <LogOut className="mr-2 h-4 w-4" />
@@ -82,6 +128,7 @@ export default function DashboardPage() {
           </div>
         </DashboardHeader>
 
+        {/* Rest of your component... */}
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}

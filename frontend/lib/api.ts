@@ -144,5 +144,19 @@ export const createApiService = () => {
         throw error;
       }
     },
+    addAllCoursesToCalendar: async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await api.post(
+          "/api/calendar/courses/all",
+          {},
+          { headers }
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error adding all courses to calendar:", error);
+        throw error;
+      }
+    },
   };
 };
