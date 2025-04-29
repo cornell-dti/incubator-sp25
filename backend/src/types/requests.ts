@@ -67,4 +67,5 @@ export interface SearchRequestHandlers {
 export interface CalendarRequestHandlers {
   addCourseToCalendar: RequestHandler<{ courseId: string }>;
   getCalendarLink: RequestHandler;
+  clearCalendarEvents: RequestHandler;
 }
