@@ -97,7 +97,7 @@ export const parseSyllabus = async (
       \
       Remember, for exams, you only need to extract the in-class exams. \
       If the exam is not clearly mentioned to be in-class, then you view it as not in-class, \
-      and you simply ignore it.\n\
+      and you simply ignore it. Also, ignore all Final exams.\n\
       \
       For courseCode, if there's crosslisted codes, just give me one. For example, \
       STSCI/BTRY/ILRST 3080/5080 would just be STSCI 3080.",
