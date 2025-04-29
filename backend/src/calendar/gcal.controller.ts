@@ -5,6 +5,7 @@ import {
   FinalDeliverable,
   Todo,
   User,
+  Course,
 } from "../types";
 import { google } from "googleapis";
 
@@ -49,6 +50,8 @@ export const gCalController: CalendarRequestHandlers = {
       if (!courseDoc.exists) {
         return res.status(404).json({ error: "Course not found" });
       }
+
+      const course = courseDoc.data() as Course;
 
       const examSnapshot = await db
         .collection("exams")
@@ -99,6 +102,7 @@ export const gCalController: CalendarRequestHandlers = {
       const todoSnapshot = await db
         .collection("todos")
         .where("userId", "==", userId)
+        .where("courseCode", "==", course.courseCode)
         .get();
 
       const todos: Todo[] = [];
@@ -195,8 +199,8 @@ const createCalendar = async (userId: string, user: User): Promise<string> => {
     await calendar.acl.insert({
       calendarId: calId,
       requestBody: {
-        role: "reader",
-        scope: { type: "default" },
+        role: "writer",
+        scope: { type: "user", value: user.email },
       },
     });
 
@@ -291,7 +295,7 @@ const createFinalDeliverableTask = async (
         dateTime: deliverable.dueDate.toDate().toISOString(),
         timeZone: "America/New_York",
       },
-      colorId: "9",
+      colorId: "11",
       reminders: {
         useDefault: false,
         overrides: [{ method: "popup", minutes: 30 }],
@@ -341,7 +345,7 @@ const createTask = async (
         dateTime: todo.date.toDate().toISOString(),
         timeZone: "America/New_York",
       },
-      colorId: "7",
+      colorId: "3",
       reminders: {
         useDefault: false,
         overrides: [{ method: "popup", minutes: 30 }],
