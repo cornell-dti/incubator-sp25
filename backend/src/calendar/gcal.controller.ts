@@ -465,7 +465,7 @@ const createTask = async (
         dateTime: dateTimeValue,
         timeZone: "America/New_York",
       },
-      colorId: "3",
+      colorId: todo.eventType == "Exam" ? "11" : "3",
       reminders: {
         useDefault: false,
         overrides: [{ method: "popup", minutes: 30 }],
