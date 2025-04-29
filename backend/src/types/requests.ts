@@ -48,6 +48,7 @@ export interface FinalDeliverableRequestHandlers {
   createDeliverable: RequestHandler<{}, FinalDeliverable>;
   updateDeliverable: RequestHandler<{ id: string }, Partial<FinalDeliverable>>;
   deleteDeliverable: RequestHandler<{ id: string }>;
+  getDeliverableByCourseId: RequestHandler<{ courseId: string }>;
 }
 
 export interface TodoRequestHandlers {
@@ -64,7 +65,6 @@ export interface SearchRequestHandlers {
 }
 
 export interface CalendarRequestHandlers {
-  createExamEvent: RequestHandler<{ id: string }>;
-  createFinalDeliverableTask: RequestHandler<{ id: string }>;
-  createTask: RequestHandler<{ id: string }>;
+  addCourseToCalendar: RequestHandler<{ courseId: string }>;
+  getCalendarLink: RequestHandler;
 }
