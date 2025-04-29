@@ -5,12 +5,11 @@ import { Router } from "express";
 const router = Router();
 
 // Public routes
-router.post("/add-exam", authMiddleware, gCalController.createExamEvent);
+router.get("/link", authMiddleware, gCalController.getCalendarLink);
 router.post(
-  "/add-deliverable",
+  "/course/:courseId",
   authMiddleware,
-  gCalController.createFinalDeliverableTask
+  gCalController.addCourseToCalendar
 );
-router.post("/add-task", authMiddleware, gCalController.createTask);
 
 export default router;

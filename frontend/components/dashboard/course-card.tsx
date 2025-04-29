@@ -3,6 +3,7 @@ import { Course } from "@/@types/models";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { createApiService } from "@/lib/api";
 
 interface CourseCardProps {
   course: Course;
@@ -21,6 +22,7 @@ export function CourseCard({
   onEditCancel,
   onViewDeadlines,
 }: CourseCardProps) {
+  const apiService = createApiService();
   const [editedValues, setEditedValues] = useState({
     courseCode: course.courseCode,
     courseName: course.courseName,
@@ -42,6 +44,21 @@ export function CourseCard({
       onEditSave();
     } else if (e.key === "Escape") {
       onEditCancel();
+    }
+  };
+
+  const getCalendar = async (courseId: string | undefined) => {
+    if (courseId) {
+      try {
+        const calendarInfo = await apiService.addCourseToCalendar(courseId);
+
+        if (calendarInfo.success) {
+          window.open(calendarInfo.addUrl, "_blank");
+        }
+      } catch (error) {
+        console.error("Error adding course to calendar:", error);
+        alert("Error adding to calendar");
+      }
     }
   };
 
@@ -89,8 +106,19 @@ export function CourseCard({
           </span>
         </div>
 
-        <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={() => onViewDeadlines(course.courseCode)}>
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => getCalendar(course.id)}
+          >
+            Add to Calendar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewDeadlines(course.courseCode)}
+          >
             View Deadlines
           </Button>
         </div>

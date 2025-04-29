@@ -113,4 +113,29 @@ export const finalDeliverableController: FinalDeliverableRequestHandlers = {
       res.status(500).json({ error: "Failed to delete final deliverable" });
     }
   },
+
+  getDeliverableByCourseId: async (req, res) => {
+    try {
+      const courseId = req.params.courseId;
+
+      const snapshot = await db
+        .collection("finalDeliverables")
+        .where("courseId", "==", courseId)
+        .get();
+
+      const deliverables: FinalDeliverable[] = [];
+
+      snapshot.forEach((doc) => {
+        deliverables.push({
+          id: doc.id,
+          ...(doc.data() as FinalDeliverable),
+        });
+      });
+
+      res.status(200).json(deliverables);
+    } catch (error) {
+      console.error("Error getting final deliverables by course ID:", error);
+      res.status(500).json({ error: "Failed to retrieve final deliverables" });
+    }
+  },
 };

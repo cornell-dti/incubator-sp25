@@ -26,7 +26,9 @@ export default function DashboardPage() {
   };
 
   const [activeTab, setActiveTab] = useState("overview");
-  const [selectedCourseFilter, setSelectedCourseFilter] = useState<string | null>(null);
+  const [selectedCourseFilter, setSelectedCourseFilter] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (activeTab !== "deadlines") {
@@ -71,22 +73,18 @@ export default function DashboardPage() {
             </Button>
             <Button variant="outline">
               <Calendar className="mr-2 h-4 w-4" />
-              Connect Calendar
+              Add Courses to Calendar
             </Button>
-            <Button 
-              variant="ghost" 
-              onClick={handleLogout}
-              className="ml-2"
-            >
+            <Button variant="ghost" onClick={handleLogout} className="ml-2">
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </Button>
           </div>
         </DashboardHeader>
 
-        <Tabs 
-          value={activeTab} 
-          onValueChange={handleTabChange} 
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
           className="space-y-4"
         >
           <TabsList>

@@ -82,6 +82,21 @@ export const createApiService = () => {
       }
     },
 
+    getDeliverableByCourseId: async (
+      courseId: string
+    ): Promise<FinalDeliverable[]> => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await api.get(`/api/deliverables/course/${courseId}`, {
+          headers,
+        });
+        return response.data;
+      } catch (error) {
+        console.error("Error getting final deliverables by course id:", error);
+        throw error;
+      }
+    },
+
     addCourse: async (courseCode: string) => {
       try {
         const headers = await getAuthHeaders();
@@ -115,43 +130,17 @@ export const createApiService = () => {
       }
     },
 
-    insertExam: async (exam: Exam) => {
-      try {
-        const headers = await getAuthHeaders();
-        const response = await api.post(`/api/calendar/add-exam`, exam.id, {
-          headers,
-        });
-        return response.data;
-      } catch (error) {
-        console.error("Error inserting exam:", error);
-        throw error;
-      }
-    },
-
-    insertDeliverable: async (deliverable: FinalDeliverable) => {
+    addCourseToCalendar: async (courseId: string) => {
       try {
         const headers = await getAuthHeaders();
         const response = await api.post(
-          `/api/calendar/add-deliverable`,
-          deliverable.id,
+          `/api/calendar/course/${courseId}`,
+          {},
           { headers }
         );
         return response.data;
       } catch (error) {
-        console.error("Error inserting deliverable:", error);
-        throw error;
-      }
-    },
-
-    insertTask: async (todo: Todo) => {
-      try {
-        const headers = await getAuthHeaders();
-        const response = await api.post(`/api/calendar/add-task`, todo.id, {
-          headers,
-        });
-        return response.data;
-      } catch (error) {
-        console.error("Error inserting task:", error);
+        console.error("Error adding course to calendar:", error);
         throw error;
       }
     },
