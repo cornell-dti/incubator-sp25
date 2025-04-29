@@ -69,7 +69,7 @@ export default function SyllabusReviewPage() {
         } else {
           router.push("/dashboard");
         }
-      }, 1500);
+      }, 500);
     }
   };
 
