@@ -57,6 +57,7 @@ export interface TodoRequestHandlers {
   updateTodo: RequestHandler<{ id: string }, Partial<Todo>>;
   deleteTodo: RequestHandler<{ id: string }>;
   getTodoByUserId: RequestHandler;
+  deleteTodoByUserIdCourse: RequestHandler<{ courseCode: string }>;
 }
 
 export interface SearchRequestHandlers {

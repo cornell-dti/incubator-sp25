@@ -321,7 +321,7 @@ export function useReviewData(syllabusId: number) {
         if (deadline.id === id) {
           if (field === "dueDate") {
             const [year, month, day] = value.split("-").map(Number);
-            const localDate = new Date(year, month - 1, day);
+            const localDate = new Date(year, month - 1, day, 23, 59, 0, 0);
             return {
               ...deadline,
               date: localDate.toISOString(),
