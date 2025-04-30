@@ -3,6 +3,7 @@ import { ArrowRight, Calendar, FileText, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import calendarImage from "../assets/calendar.jpg";
 
 export default function Home() {
   return (
@@ -45,7 +46,11 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button size="lg" className="bg-rose-500 hover:bg-rose-600" asChild>
+                  <Button
+                    size="lg"
+                    className="bg-rose-500 hover:bg-rose-600"
+                    asChild
+                  >
                     <Link href="/login">
                       Get Started
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -58,7 +63,7 @@ export default function Home() {
               </div>
               <div className="flex items-center justify-center w-full px-4 py-4">
                 <img
-                  src="/placeholder.svg?height=150&width=900"
+                  src={calendarImage.src}
                   alt="Student planner dashboard preview"
                   className="rounded-lg object-cover shadow-lg w-full max-w-5xl"
                   width={900}
