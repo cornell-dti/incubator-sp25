@@ -1,6 +1,6 @@
 import { todo } from "node:test";
 import { db } from "../config/firebase";
-import { Todo } from "../types";
+import { Todo, User } from "../types";
 import { TodoRequestHandlers } from "../types/requests";
 
 export const todoController: TodoRequestHandlers = {
@@ -137,6 +137,51 @@ export const todoController: TodoRequestHandlers = {
       res.status(200).json(todos);
     } catch (error) {
       console.error("Error getting todos by user ID:", error);
+      res.status(500).json({ error: "Failed to retrieve todos" });
+    }
+  },
+
+  deleteTodoByUserIdCourse: async (req, res) => {
+    const courseCode = req.params.id;
+    try {
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      const snapshot = await db
+        .collection("todos")
+        .where("userId", "==", userId)
+        .where("courseCode", "==", courseCode)
+        .get();
+
+      const batch = db.batch();
+
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      const userRef = await db.collection("users").doc(userId);
+      const user = await userRef.get();
+      const userData = user.data() as User;
+
+      const userCourses = userData.courses.filter(
+        (c) => c.courseCode !== courseCode
+      );
+
+      await userRef.update({
+        courses: userCourses,
+      });
+
+      res.status(200).json({
+        message: `Successfully deleted all todos for course ${courseCode}`,
+        count: snapshot.size,
+      });
+    } catch (error) {
+      console.error(`Error deleting ${courseCode} todos by user ID:`, error);
       res.status(500).json({ error: "Failed to retrieve todos" });
     }
   },

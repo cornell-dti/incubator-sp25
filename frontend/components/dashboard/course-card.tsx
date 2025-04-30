@@ -31,6 +31,7 @@ export function CourseCard({
         ? course.sections[0].instructor
         : "",
   });
+  const [isAddingToCalendar, setIsAddingToCalendar] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setEditedValues({
@@ -49,6 +50,7 @@ export function CourseCard({
 
   const getCalendar = async (courseId: string | undefined) => {
     if (courseId) {
+      setIsAddingToCalendar(true);
       try {
         const calendarInfo = await apiService.addCourseToCalendar(courseId);
 
@@ -58,6 +60,8 @@ export function CourseCard({
       } catch (error) {
         console.error("Error adding course to calendar:", error);
         alert("Error adding to calendar");
+      } finally {
+        setIsAddingToCalendar(false);
       }
     }
   };
@@ -111,8 +115,9 @@ export function CourseCard({
             variant="outline"
             size="sm"
             onClick={() => getCalendar(course.id)}
+            disabled={isAddingToCalendar}
           >
-            Add to Calendar
+            {isAddingToCalendar ? <>Adding...</> : <>Add to Calendar</>}
           </Button>
           <Button
             variant="outline"

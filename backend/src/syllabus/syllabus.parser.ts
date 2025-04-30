@@ -66,19 +66,19 @@ export const parseSyllabus = async (
       todos[]: [\
         {\
           title: Complete Shakespeare Romeo & Juliet Ch 1,\
-          date: 2025-01-01T00:00:00Z,\
+          date: 2025-01-02T04:59:00Z,\
           eventType: Assignment,\
           priority: 3,\
         },\
         {\
           title: In-class prelim exam 1,\
-          date: 2025-01-31T00:00:00Z,\
+          date: 2025-02-01T00:00:00Z,\
           eventType: Exam,\
           priority: 1,\
         },\
         {\
           title: Complete final project,\
-          date: 2025-05-01T00:00:00Z,\
+          date: 2025-05-02T04:59:00Z,\
           eventType: Project,\
           priority: 2,\
         }\
@@ -89,7 +89,8 @@ export const parseSyllabus = async (
       To identify what in a syllabus counts as a to-do, look at due dates for \
       readings, assignments, projects, etc. For example, if a reading is to be \
       completed for a certain week, make them due before each class. The class \
-      meeting times should usually be on the syllabus as well. The eventType of a \
+      meeting times should usually be on the syllabus as well. Otherwise, if the \
+      todo is not a reading, then make it due at 11:59pm EST. The eventType of a \
       todo is based on which category it falls under within the categories in gradingPolicy. \
       Please determine the priority of each task based on the weight given to the \
       specific category (i.e. projects would be higher priority than assignments, \
