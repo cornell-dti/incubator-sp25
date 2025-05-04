@@ -9,6 +9,28 @@ export interface AuthRequest extends Request {
   };
 }
 
+/**
+ * Express middleware for authenticating requests using Firebase ID tokens.
+ *
+ * This middleware:
+ * 1. Extracts the Bearer token from the Authorization header
+ * 2. Verifies the token with Firebase Auth
+ * 3. Attaches user information to the request object
+ * 4. Responds with 401 if authentication fails
+ *
+ * @param {AuthRequest} req - Express request object with potential user property
+ * @param {Response} res - Express response object
+ * @param {NextFunction} next - Express next function to continue middleware chain
+ * @returns {Promise<void>} Promise that resolves when middleware completes
+ *
+ * @example
+ * // Apply to a single route
+ * app.get('/protected', authMiddleware, (req: AuthRequest, res) => {
+ *   res.json({ user: req.user });
+ * });
+ *
+ * @throws {401} When token is missing, invalid, or expired
+ */
 export const authMiddleware = async (
   req: AuthRequest,
   res: Response,
