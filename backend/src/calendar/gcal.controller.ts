@@ -21,6 +21,9 @@ const gCalClient = () => {
 
 const calendar = gCalClient();
 
+/**
+ * Manages all gcal integration functions
+ */
 export const gCalController: CalendarRequestHandlers = {
   addAllCoursesToCalendar: async (req, res) => {
     try {
@@ -234,6 +237,12 @@ export const gCalController: CalendarRequestHandlers = {
         .json({ error: "Failed to add courses to calendar" });
     }
   },
+  /**
+   * Adds individual course to a user's calendar
+   * @param req Request containing user auth information and courseId
+   * @param res
+   * @returns Calendar link response
+   */
   addCourseToCalendar: async (req, res) => {
     try {
       const userId = req.user?.uid;
