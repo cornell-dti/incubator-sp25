@@ -85,6 +85,32 @@ export const gCalController: CalendarRequestHandlers = {
           });
         });
 
+        const colorMap = user.courseColors;
+        let colorId = "0";
+        if (!colorMap) {
+          const newColor = [
+            { courseCode: course.courseCode, colorId: colorId },
+          ];
+          await db
+            .collection("users")
+            .doc(userId)
+            .update({ courseColors: newColor });
+        } else {
+          const match = colorMap.find(
+            (c) => c.courseCode === course.courseCode
+          );
+          if (!match) {
+            colorId = colorMap.length.toString();
+            colorMap.push({ courseCode: course.courseCode, colorId: colorId });
+            await db
+              .collection("users")
+              .doc(userId)
+              .update({ courseColors: colorMap });
+          } else {
+            colorId = match.colorId;
+          }
+        }
+
         // Get deliverables for this course
         const deliverableSnapshot = await db
           .collection("finalDeliverables")
@@ -102,7 +128,7 @@ export const gCalController: CalendarRequestHandlers = {
         // Add exams to calendar
         for (const exam of exams) {
           if (exam.id) {
-            await createExamEvent(userId, exam.id, eventPromises);
+            await createExamEvent(userId, exam.id, eventPromises, colorId);
           }
         }
 
@@ -112,7 +138,8 @@ export const gCalController: CalendarRequestHandlers = {
             await createFinalDeliverableTask(
               userId,
               deliverable.id,
-              eventPromises
+              eventPromises,
+              colorId
             );
           }
         }
@@ -135,7 +162,7 @@ export const gCalController: CalendarRequestHandlers = {
         // Add todos to calendar
         for (const todo of todos) {
           if (todo.id) {
-            await createTask(userId, todo.id, eventPromises);
+            await createTask(userId, todo.id, eventPromises, colorId);
           }
         }
 
@@ -238,6 +265,24 @@ export const gCalController: CalendarRequestHandlers = {
 
       const course = courseDoc.data() as Course;
 
+      const colorMap = user.courseColors;
+      let colorId = "0";
+      if (!colorMap) {
+        const newColor = [{ courseCode: course.courseCode, colorId: colorId }];
+        await db
+          .collection("users")
+          .doc(userId)
+          .update({ courseColors: newColor });
+      } else {
+        const match = colorMap.find((c) => c.courseCode === course.courseCode);
+        if (!match) {
+          colorId = colorMap.length.toString();
+          colorMap.push({ courseCode: course.courseCode, colorId: colorId });
+        } else {
+          colorId = match.colorId;
+        }
+      }
+
       // Get all required data first
       const examSnapshot = await db
         .collection("exams")
@@ -329,13 +374,13 @@ export const gCalController: CalendarRequestHandlers = {
         try {
           switch (eventType) {
             case "exam":
-              await processExam(userId, eventId);
+              await processExam(userId, eventId, colorId);
               break;
             case "deliverable":
-              await processDeliverable(userId, eventId);
+              await processDeliverable(userId, eventId, colorId);
               break;
             case "todo":
-              await processTodo(userId, eventId);
+              await processTodo(userId, eventId, colorId);
               break;
           }
           return true;
@@ -593,7 +638,8 @@ const createCalendar = async (userId: string, user: User): Promise<string> => {
 const createExamEvent = async (
   userId: string,
   examId: string,
-  eventPromises: Promise<any>[]
+  eventPromises: Promise<any>[],
+  colorId: string
 ) => {
   try {
     const userDoc = await db.collection("users").doc(userId).get();
@@ -619,7 +665,7 @@ const createExamEvent = async (
         dateTime: exam.endTime.toDate().toISOString(),
         timeZone: "America/New_York",
       },
-      colorId: "11",
+      colorId: colorId,
       reminders: {
         useDefault: false,
         overrides: [{ method: "popup", minutes: 60 }],
@@ -641,7 +687,8 @@ const createExamEvent = async (
 const createFinalDeliverableTask = async (
   userId: string,
   deliverableId: string,
-  eventPromises: Promise<any>[]
+  eventPromises: Promise<any>[],
+  colorId: string
 ) => {
   try {
     const userDoc = await db.collection("users").doc(userId).get();
@@ -670,7 +717,7 @@ const createFinalDeliverableTask = async (
         dateTime: deliverable.dueDate.toDate().toISOString(),
         timeZone: "America/New_York",
       },
-      colorId: "11",
+      colorId: colorId,
       reminders: {
         useDefault: false,
         overrides: [{ method: "popup", minutes: 30 }],
@@ -694,7 +741,8 @@ const createFinalDeliverableTask = async (
 const createTask = async (
   userId: string,
   taskId: string,
-  eventPromises: Promise<any>[]
+  eventPromises: Promise<any>[],
+  colorId: string
 ) => {
   try {
     const userDoc = await db.collection("users").doc(userId).get();
@@ -734,7 +782,7 @@ const createTask = async (
         dateTime: dateTimeValue,
         timeZone: "America/New_York",
       },
-      colorId: todo.eventType == "Exam" ? "11" : "3",
+      colorId: colorId,
       reminders: {
         useDefault: false,
         overrides: [{ method: "popup", minutes: 30 }],
@@ -754,7 +802,7 @@ const createTask = async (
 };
 
 // Helper functions for batch processing
-const processExam = async (userId: string, examId: string) => {
+const processExam = async (userId: string, examId: string, colorId: string) => {
   const userDoc = await db.collection("users").doc(userId).get();
   const user = userDoc.data() as User;
   let calendarId = user.calendarLink;
@@ -778,7 +826,7 @@ const processExam = async (userId: string, examId: string) => {
       dateTime: exam.endTime.toDate().toISOString(),
       timeZone: "America/New_York",
     },
-    colorId: "11",
+    colorId: colorId,
     reminders: {
       useDefault: false,
       overrides: [{ method: "popup", minutes: 60 }],
@@ -791,7 +839,11 @@ const processExam = async (userId: string, examId: string) => {
   });
 };
 
-const processDeliverable = async (userId: string, deliverableId: string) => {
+const processDeliverable = async (
+  userId: string,
+  deliverableId: string,
+  colorId: string
+) => {
   const userDoc = await db.collection("users").doc(userId).get();
   const user = userDoc.data() as User;
   let calendarId = user.calendarLink;
@@ -818,7 +870,7 @@ const processDeliverable = async (userId: string, deliverableId: string) => {
       dateTime: deliverable.dueDate.toDate().toISOString(),
       timeZone: "America/New_York",
     },
-    colorId: "11",
+    colorId: colorId,
     reminders: {
       useDefault: false,
       overrides: [{ method: "popup", minutes: 30 }],
@@ -831,7 +883,7 @@ const processDeliverable = async (userId: string, deliverableId: string) => {
   });
 };
 
-const processTodo = async (userId: string, todoId: string) => {
+const processTodo = async (userId: string, todoId: string, colorId: string) => {
   const userDoc = await db.collection("users").doc(userId).get();
   const user = userDoc.data() as User;
   let calendarId = user.calendarLink;
@@ -867,7 +919,7 @@ const processTodo = async (userId: string, todoId: string) => {
       dateTime: dateTimeValue,
       timeZone: "America/New_York",
     },
-    colorId: todo.eventType == "Exam" ? "11" : "3",
+    colorId: colorId,
     reminders: {
       useDefault: false,
       overrides: [{ method: "popup", minutes: 30 }],
