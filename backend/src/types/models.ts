@@ -6,7 +6,7 @@ export interface User {
   name: string;
   courses: Course[];
   calendarLink: string;
-  taskListId: string;
+  courseColors: { courseCode: string; colorId: string }[];
 
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
